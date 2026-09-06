@@ -16,7 +16,7 @@
 
 ## 安装与验证
 
-从私有 prerelease 下载 zip 与 `SHA256SUMS.txt`：https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1 。对应源码为 `645d41a19fc879b0dd362245aaf8b03f5961651e`。GitHub 自动生成的 Source code 压缩包不是安装器。
+从公开 prerelease 下载 zip 与 `SHA256SUMS.txt`：https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1 。对应源码为 `645d41a19fc879b0dd362245aaf8b03f5961651e`。GitHub 自动生成的 Source code 压缩包不是安装器。
 
 解压 zip 后按照 [安装说明](../README.md) 执行安装器，首次使用调用 `$codex-scientific-reading`。程序需联网获取清单中的固定依赖。
 
