@@ -112,6 +112,7 @@ test('控制管道按解析后的安装根命名，联接路径仍拒绝伪造�
     await new Promise(resolve => web.close(resolve));
   });
   assert.equal(pipeName(requested), pipeName(instance.root));
+  await assert.rejects(status(requested), /instance_identity_mismatch/);
   await assert.rejects(status(instance.root), /instance_identity_mismatch/);
 });
 

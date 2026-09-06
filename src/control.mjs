@@ -8,9 +8,20 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { initializeRoot, isolatedEnvironment, readJson } from './core.mjs';
 
+function canonicalRoot(root) {
+  const absolute = path.resolve(root);
+  let resolved = absolute;
+  try { resolved = realpathSync.native(absolute); }
+  catch {
+    try { resolved = realpathSync(absolute); } catch { /* directory may not exist yet */ }
+  }
+  if (resolved.startsWith('\\\\?\\UNC\\')) return `\\\\${resolved.slice(8)}`;
+  if (resolved.startsWith('\\\\?\\')) return resolved.slice(4);
+  return resolved;
+}
+
 export function pipeName(root) {
-  let resolved = path.resolve(root);
-  try { resolved = realpathSync(resolved); } catch { /* directory may not exist yet */ }
+  const resolved = canonicalRoot(root);
   const identity = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
   const hash = createHash('sha256').update(identity).digest('hex').slice(0, 28);
   return process.platform === 'win32' ? `\\\\.\\pipe\\csr-${hash}` : path.join(resolved, 'state', 'control.sock');
