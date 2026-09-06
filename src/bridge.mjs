@@ -53,7 +53,7 @@ export async function apply(ctx, config) {
     if (!scope || !CATEGORY_TOOLS.has(exec.name)) throw new Error('scope_command_forbidden');
     // A's download status has a TS fast path; require the scoped Python fact first.
     if (exec.name === 'sr_job_status') {
-      return api.withEngineScope(scope, () => engine(['job-status', '--job-id', exec.arguments.job_id], undefined, scope));
+      await engine(['job-status', '--job-id', exec.arguments.job_id], undefined, scope);
     }
     return api.withEngineScope(scope, next);
   });
@@ -62,7 +62,7 @@ export async function apply(ctx, config) {
     service.serial(() => service.save()).catch(() => {});
   });
   ctx.systemPrompt.section({ name: 'codex-reading-boundary', order: 190, text:
-    '你是当前文献分类的管理员。范围由宿主固定，工具无法越权。用 csr_read_job_input 按 job_id 分页读取当前 gate 的 source_manifest_path 或 translations_json，再用 sr_continue_full_read 提交原合同的 JSON；不要使用文件编辑器、shell 或浏览器。遇到 PDF、密钥、用户阅读确认时保留任务并报告等待。其他分类、全局设置、移动归档和浏览器下载交给 Codex 总管理员。' });
+    '你是当前文献分类的管理员。范围由宿主固定，工具无法越权。用 csr_read_job_input 按 job_id 分页读取当前 gate 的 source_manifest_path 或 translations_json，再用 sr_continue_full_read 提交原合同的 JSON；不要使用文件编辑器、shell 或浏览器。提交回执仅表示已交给后台，需用 sr_job_status 等待 queued/running 结束。翻译和复核 revision_required 是可自行修正的 agent gate，按 validation_error 修正后继续；不要把它当作用户确认。遇到 PDF、密钥、用户阅读确认时保留任务并报告等待。其他分类、全局设置、移动归档和浏览器下载交给 Codex 总管理员。' });
   ctx.tools.register({ name: 'csr_read_job_input', description: '分页读取当前分类真实任务 gate 的翻译源或复核材料，不接受任意文件路径。',
     parameters: { type: 'object', properties: { job_id: { type: 'string' }, field: { type: 'string', enum: ['source_manifest_path', 'translations_json'] }, offset: { type: 'integer', minimum: 0 }, limit: { type: 'integer', minimum: 1, maximum: 50000 } }, required: ['job_id', 'field'], additionalProperties: false },
     output: { schema: { type: 'object', properties: { job_id: { type: 'string' }, field: { type: 'string' }, offset: { type: 'integer' }, total: { type: 'integer' }, text: { type: 'string' }, nextOffset: { oneOf: [{ type: 'integer' }, { type: 'null' }] } }, required: ['job_id', 'field', 'offset', 'total', 'text', 'nextOffset'], additionalProperties: false },

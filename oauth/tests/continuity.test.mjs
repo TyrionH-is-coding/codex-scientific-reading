@@ -123,7 +123,8 @@ test('Stop generating 后切换模型，下一回合不消费上一 turn 的中�
   const server = new Server()
   const adapter = new SafeCodexAdapter(server)
   const first = await Array.fromAsync(adapter.stream({ ...base, messages: [user('translate')] }))
-  server.events.unshift({
+  server.events.unshift({method: 'turn/started', params: {threadId: 'native-1', turn: {id: 'stale-turn'}}},
+    {method: 'item/agentMessage/delta', params: {threadId: 'native-1', turnId: 'stale-turn', itemId: 'stale-answer', delta: 'STALE OUTPUT'}}, {
     method: 'turn/completed',
     params: { threadId: 'native-1', turn: { id: 'stale-turn', status: 'interrupted' } },
   })
@@ -134,6 +135,7 @@ test('Stop generating 后切换模型，下一回合不消费上一 turn 的中�
   }))
   assert.equal(next.at(-1).reason.kind, 'stop')
   assert.equal(server.turns.at(-1).input.model, 'other-fixture-model')
+  assert.ok(!JSON.stringify(next).includes('STALE OUTPUT'))
 })
 
 test('PB-08 account metadata update during a turn cannot destroy its replay mapping', async () => {

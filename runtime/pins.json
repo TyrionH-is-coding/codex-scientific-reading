@@ -16,8 +16,8 @@
   "dsh": "0.1.0-rc.7",
   "plugin": {
     "name": "@dsh-external/dsh-scientific-reading",
-    "version": "0.1.0-rc.1",
-    "sha256": "15f752f359ed2865a32671e1c7e0240bb74ad22033b706029efcbc7110672c59",
-    "source": "A 的固定 0.1.0-rc.1 候选包；随发行包附带逐文件源码校验清单"
+    "version": "0.1.0-rc.2",
+    "sha256": "22d80aeb0df7bb15f7bc34657c1d3a8b4284a975c7538b7efb24703b680d0e38",
+    "source": "A rc.2 candidate built from codex/remaining-fixes-acceptance; bundled with this release"
   }
 }

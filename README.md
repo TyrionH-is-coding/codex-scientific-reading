@@ -2,7 +2,7 @@
 
 由 Codex 对话管理全库，在 Codex 内置浏览器中运行独立 DeepSeek Harness（DSH）；每个文献分类绑定一个持久 DSH 管理会话。文献处理复用 DSH Scientific Reading 的固定发布包，SQLite 保存事实，Excel 是派生视图。
 
-当前版本为 **[0.1.0-rc.1](https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1) 发布候选**。首版支持 Windows x64、PowerShell 5.1+，需要联网安装。无需预装全局 DSH、Node 或 Python。Codex 桌面端必须提供可打开、读取页面的内置浏览器能力；Skill 会实际检查。本仓库已公开，可直接从该 Release 下载 zip 与 `SHA256SUMS.txt`，不要使用 GitHub 自动生成的 Source code 压缩包。全新机器步骤见 [START_HERE.md](START_HERE.md)。
+本分支为 **0.1.0-rc.2 修复候选**。已公开的 [rc.1 Release](https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1) 附件不包含这轮修复；测试 rc.2 请使用与本分支对应、附有 `SHA256SUMS.txt` 的候选 zip 和配套 A 包，不要使用 GitHub 自动生成的 Source code 压缩包。支持 Windows x64、PowerShell 5.1+，需要联网安装，无需预装全局 DSH、Node 或 Python。Codex 桌面端必须提供可打开、读取页面的内置浏览器能力；Skill 会实际检查。全新机器步骤见 [START_HERE.md](START_HERE.md)。
 
 ## 安装与打开
 

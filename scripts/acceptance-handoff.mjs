@@ -62,13 +62,15 @@ try {
   await stop(root);
   const localModel = fileURLToPath(new URL('./fixtures/local-model.mjs', import.meta.url));
   await writeJson(patchPath, [{ insert: [{ id: 'csr-acceptance-scope', name: pathToFileURL(fixture).href,
-    config: { sessionId: binding1.sessionId, foreignPaperId: paper2.paper_id, foreignJobId: task2.jobId } },
+    config: { sessionId: binding1.sessionId, ownJobId: task1.jobId, foreignPaperId: paper2.paper_id, foreignJobId: task2.jobId } },
     { id: 'acceptance-local', name: pathToFileURL(localModel).href, config: { dshEntry: installed.dsh } }] }]);
   running = await start(root);
   await invoke('bind', { folderId: folder1.folder_id });
   const probeResponse = await fetch(running.url + '/__workbench/acceptance-scope');
   const probe = await probeResponse.json(); results.scopeProbe = probe;
   check('actual native scope fixture loaded', probeResponse.ok);
+  check('native status tool returns canonical JSON for own waiting job', probe.ownJob.isError === false
+    && probe.ownJob.value?.job_id === task1.jobId);
   const listing = JSON.stringify(probe.listing);
   check('native tool without folder argument remains scoped', probe.listing.isError === false && listing.includes(paper1.paper_id) && !listing.includes(paper2.paper_id));
   check('foreign job blocked before TS fast path', probe.foreignJob.isError === true);

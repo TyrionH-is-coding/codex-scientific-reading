@@ -14,6 +14,7 @@ export function apply(ctx, config) {
       if (!agent) throw new Error('test_agent_missing');
       const run = (name, args) => ctx.tools.execute({ name, arguments: args, agent, callId: 'acceptance-' + name, signal: new AbortController().signal });
       const listing = await run('sr_library_list', {});
+      const ownJob = await run('sr_job_status', { job_id: config.ownJobId });
       const foreignJob = await run('sr_job_status', { job_id: config.foreignJobId });
       const foreignStart = await run('sr_start_full_read', { paper_id: config.foreignPaperId });
       const escape = await run('csr_escape_probe', {});
@@ -29,7 +30,7 @@ export function apply(ctx, config) {
         childForeignJob = await execute('sr_job_status', { job_id: config.foreignJobId });
       } finally { await child.dispose(); }
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ listing, foreignJob, foreignStart, escape, escapeBodyEntered,
+      res.end(JSON.stringify({ listing, ownJob, foreignJob, foreignStart, escape, escapeBodyEntered,
         childListing, childForeignJob, childSessionId: child.agent.session.id,
         tools: assembly.tools.map(tool => tool.name) }));
     } catch (error) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: error.message })); }

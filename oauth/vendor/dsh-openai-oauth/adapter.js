@@ -201,6 +201,8 @@ export class CodexAppServerAdapter extends LlmAdapter {
         try {
             while (true) {
                 const event = await this.nextEvent(session, options.signal);
+                const eventTurnId = event.params?.turnId ?? event.params?.turn?.id;
+                if (eventTurnId && session.turnId && eventTurnId !== session.turnId) continue;
                 if (event.method === 'turn/started') {
                     const turn = event.params.turn;
                     if (typeof turn.id === 'string')

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
 export const PRODUCT = 'codex-scientific-reading';
-export const VERSION = '0.1.0-rc.1';
+export const VERSION = '0.1.0-rc.2';
 
 export async function readJson(file) {
   return JSON.parse((await fs.readFile(file, 'utf8')).replace(/^\uFEFF/, ''));

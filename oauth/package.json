@@ -1,14 +1,30 @@
 {
   "name": "codex-scientific-reading-oauth",
-  "version": "0.1.0-rc.1",
+  "version": "0.1.0-rc.2",
   "private": true,
   "type": "module",
   "license": "BSD-3-Clause",
   "description": "B 实例专属的 Codex 订阅原生 DSH 适配器",
-  "exports": { ".": "./index.mjs", "./control": "./control.mjs", "./package.json": "./package.json" },
-  "files": ["*.mjs", "vendor", "provenance.json", "LICENSE", "cordis.patch.yml"],
-  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
-  "dependencies": { "@openai/codex": "0.146.0" },
+  "exports": {
+    ".": "./index.mjs",
+    "./control": "./control.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "*.mjs",
+    "vendor",
+    "provenance.json",
+    "LICENSE",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@openai/codex": "0.146.0"
+  },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.1",
     "@deepseek-ai/dsh-llm": "0.1.0-rc.7",
@@ -17,8 +33,23 @@
     "@deepseek-ai/dsh-invariants": "0.1.0-rc.7",
     "@deepseek-ai/dsh-timeout": "0.1.0-rc.7"
   },
-  "peerDependencies": { "@deepseek-ai/cordis": "4.0.1", "@deepseek-ai/dsh-llm": "0.1.0-rc.7" },
-  "peerDependenciesMeta": { "@deepseek-ai/cordis": { "optional": true }, "@deepseek-ai/dsh-llm": { "optional": true } },
-  "scripts": { "test": "node --test tests/*.test.mjs", "test:live-unauthed": "node tests/live-unauthed.mjs" },
-  "engines": { "node": ">=22.19.0" }
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.0.1",
+    "@deepseek-ai/dsh-llm": "0.1.0-rc.7"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:live-unauthed": "node tests/live-unauthed.mjs"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
 }
