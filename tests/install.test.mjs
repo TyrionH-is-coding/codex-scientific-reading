@@ -11,11 +11,14 @@ import { activateRelease } from '../src/releases.mjs';
 async function skillFixture(t) {
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-install-skill-'));
   t.after(async () => {
-    assert.ok(path.resolve(temporary).startsWith(path.join(os.tmpdir(), 'csr-install-skill-')));
+    const resolved = await fs.realpath(temporary);
+    const temp = await fs.realpath(os.tmpdir());
+    assert.equal(path.dirname(resolved).toLowerCase(), temp.toLowerCase());
+    assert.ok(path.basename(resolved).toLowerCase().startsWith('csr-install-skill-'));
     await fs.rm(temporary, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
-  const root = path.join(temporary, 'instance'), skills = path.join(temporary, 'skills');
-  await initializeRoot(root);
+  const { root } = await initializeRoot(path.join(temporary, 'instance'));
+  const skills = path.join(temporary, 'skills');
   const candidate = async id => {
     const slot = path.join(root, 'releases', id.repeat(16));
     const source = path.join(slot, 'app', 'skills', 'codex-scientific-reading');

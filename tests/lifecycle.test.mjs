@@ -9,15 +9,18 @@ import { initializeRoot, writeJson } from '../src/core.mjs';
 import { start, status, stop, pipeName } from '../src/control.mjs';
 
 async function fixture(t, name = 'fixture-host.mjs') {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-process-'));
-  await initializeRoot(root);
+  const requested = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-process-'));
+  const { root } = await initializeRoot(requested);
   await writeJson(path.join(root, 'installation.json'), {
     version: 'test', node: process.execPath,
     dsh: path.resolve('tests', name), python: process.execPath, candidate: true,
   });
   t.after(async () => {
     await stop(root);
-    if (!root.startsWith(path.join(os.tmpdir(), 'csr-process-'))) throw new Error('invalid_fixture_root');
+    const resolved = await fs.realpath(root);
+    const temp = await fs.realpath(os.tmpdir());
+    if (path.dirname(resolved).toLowerCase() !== temp.toLowerCase()) throw new Error('invalid_fixture_root');
+    if (!path.basename(resolved).toLowerCase().startsWith('csr-process-')) throw new Error('invalid_fixture_root');
     await fs.rm(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 50 });
   });
   return root;

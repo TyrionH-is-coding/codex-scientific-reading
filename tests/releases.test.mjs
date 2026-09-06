@@ -6,13 +6,20 @@ import os from 'node:os';
 import { initializeRoot, readJson, writeJson } from '../src/core.mjs';
 import { activateRelease, rollbackRelease, retireInstallation, recoverRelease } from '../src/releases.mjs';
 
+async function assertManagedTemp(dir, prefix) {
+  const resolved = await fs.realpath(dir);
+  const temp = await fs.realpath(os.tmpdir());
+  assert.equal(path.dirname(resolved).toLowerCase(), temp.toLowerCase());
+  assert.ok(path.basename(resolved).toLowerCase().startsWith(prefix.toLowerCase()));
+}
+
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-'));
-  await initializeRoot(root);
+  const requested = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-'));
+  const { root } = await initializeRoot(requested);
   await fs.writeFile(path.join(root, 'library', 'paper.pdf'), 'real-user-asset-sentinel');
   await fs.writeFile(path.join(root, 'state', 'settings.json'), 'private-settings-sentinel');
   t.after(async () => {
-    assert.ok(path.resolve(root).startsWith(path.join(os.tmpdir(), 'csr-release-')));
+    await assertManagedTemp(root, 'csr-release-');
     await fs.rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
   const candidate = async id => {
@@ -32,6 +39,65 @@ async function fixture(t) {
   };
   return { root, candidate, lifecycle, calls };
 }
+
+test('未解析临时路径或联接到达同一安装根时，发行槽位仍有效', async t => {
+  const created = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-alias-'));
+  const canonical = await fs.realpath(created);
+  let requested = created;
+  let extraAlias;
+  if (created === canonical) {
+    extraAlias = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-junc-'));
+    requested = path.join(extraAlias, 'instance');
+    await fs.symlink(canonical, requested, 'junction');
+  }
+  t.after(async () => {
+    if (extraAlias) await fs.rm(extraAlias, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.rm(created, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  });
+  assert.notEqual(path.resolve(requested), await fs.realpath(requested));
+  await initializeRoot(requested);
+  const slot = path.join(requested, 'releases', 'a'.repeat(16));
+  await fs.mkdir(path.join(slot, 'profile-modules'), { recursive: true });
+  const release = {
+    product: 'codex-scientific-reading', version: 'a', appSha256: 'a'.repeat(64),
+    slot, app: path.join(slot, 'app'), profileModules: path.join(slot, 'profile-modules'), dataFormat: 4,
+  };
+  await writeJson(path.join(slot, 'release.json'), release);
+  const lifecycle = {
+    status: async () => ({ status: 'stopped' }),
+    stop: async () => ({ status: 'stopped' }),
+    start: async () => ({ status: 'running' }),
+  };
+  await activateRelease(requested, release, { lifecycle });
+  assert.equal((await readJson(path.join(requested, 'installation.json'))).version, 'a');
+  await assert.rejects(activateRelease(requested, { ...release, slot: path.dirname(requested) }, { lifecycle }), /release_path/);
+});
+
+test('发行槽位若联接到实例外目录则拒绝', async t => {
+  const requested = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-escape-'));
+  const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-release-outside-'));
+  const { root } = await initializeRoot(requested);
+  t.after(async () => {
+    await fs.rm(requested, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.rm(outside, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  });
+  const slot = path.join(root, 'releases', 'a'.repeat(16));
+  await fs.mkdir(path.dirname(slot), { recursive: true });
+  await fs.symlink(await fs.realpath(outside), slot, 'junction');
+  await fs.mkdir(path.join(slot, 'profile-modules'), { recursive: true });
+  const release = {
+    product: 'codex-scientific-reading', version: 'a', appSha256: 'a'.repeat(64),
+    slot, app: path.join(slot, 'app'), profileModules: path.join(slot, 'profile-modules'), dataFormat: 4,
+  };
+  await writeJson(path.join(slot, 'release.json'), release);
+  const lifecycle = {
+    status: async () => ({ status: 'stopped' }),
+    stop: async () => ({ status: 'stopped' }),
+    start: async () => ({ status: 'running' }),
+  };
+  await assert.rejects(activateRelease(root, release, { lifecycle }), /release_path/);
+  await assert.rejects(fs.access(path.join(root, 'installation.json')), { code: 'ENOENT' });
+});
 
 test('升级和回退保留新旧文献、配置和实例身份', async t => {
   const { root, candidate, lifecycle } = await fixture(t);

@@ -22,13 +22,23 @@ async function exclusive(root, action) {
   finally { await new Promise(resolve => server.close(resolve)); }
 }
 
+function sameDeclaredPath(actual, parent, name) {
+  return path.resolve(actual) === path.resolve(parent, name);
+}
+
 async function validateRelease(root, release) {
   if (release?.product !== 'codex-scientific-reading' || !/^[a-f0-9]{64}$/.test(release.appSha256 ?? '')) throw new Error('invalid_release');
-  const slot = path.join(root, 'releases', release.appSha256.slice(0, 16));
-  if (release.slot !== slot || release.app !== path.join(slot, 'app') ||
-      release.profileModules !== path.join(slot, 'profile-modules') || await fs.realpath(slot) !== slot) throw new Error('invalid_release_path');
-  if (release.profilePackage && release.profilePackage !== path.join(slot, 'profile-package.json')) throw new Error('invalid_profile_package');
-  const expected = await readJson(path.join(slot, 'release.json'));
+  const expectedSlot = path.join(await fs.realpath(root), 'releases', release.appSha256.slice(0, 16));
+  let resolvedSlot;
+  try { resolvedSlot = await fs.realpath(release.slot); }
+  catch { throw new Error('invalid_release_path'); }
+  if (resolvedSlot !== expectedSlot) throw new Error('invalid_release_path');
+  if (!sameDeclaredPath(release.app, release.slot, 'app') ||
+      !sameDeclaredPath(release.profileModules, release.slot, 'profile-modules')) throw new Error('invalid_release_path');
+  if (release.profilePackage && !sameDeclaredPath(release.profilePackage, release.slot, 'profile-package.json')) {
+    throw new Error('invalid_profile_package');
+  }
+  const expected = await readJson(path.join(resolvedSlot, 'release.json'));
   if (JSON.stringify(expected) !== JSON.stringify(release)) throw new Error('release_descriptor_mismatch');
 }
 

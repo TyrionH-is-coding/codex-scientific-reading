@@ -8,8 +8,9 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  workbench:
     runs-on: windows-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,6 +18,15 @@ jobs:
           node-version: "22"
       - name: Workbench unit tests
         run: npm test
+
+  oauth:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: OAuth unit tests
         working-directory: oauth
         run: |
