@@ -17,7 +17,7 @@
   "plugin": {
     "name": "@dsh-external/dsh-scientific-reading",
     "version": "0.1.0-rc.2",
-    "sha256": "22d80aeb0df7bb15f7bc34657c1d3a8b4284a975c7538b7efb24703b680d0e38",
+    "sha256": "ce2018eecb698f6b77442d29d299516fb402c6435b14c51ee563f21a6d1f4067",
     "source": "A rc.2 candidate built from codex/remaining-fixes-acceptance; bundled with this release"
   }
 }
