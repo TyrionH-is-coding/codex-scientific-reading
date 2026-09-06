@@ -67,8 +67,9 @@ test('宿主失败后返回具体状态，不能把进程存在当成就绪', as
 });
 
 test('拒绝控制通道返回的其他实例，即使其 HTTP 身份自洽', async t => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-wrong-instance-'));
-  const instance = await initializeRoot(root);
+  const requested = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-wrong-instance-'));
+  const instance = await initializeRoot(requested);
+  const root = instance.root;
   const wrong = { ...instance, instanceId: 'wrong-instance', launchId: 'wrong-launch', pid: process.pid, status: 'running' };
   const web = http.createServer((_q, response) => response.end(JSON.stringify(wrong)));
   await new Promise(resolve => web.listen(0, '127.0.0.1', resolve));
@@ -82,6 +83,36 @@ test('拒绝控制通道返回的其他实例，即使其 HTTP 身份自洽', as
   });
   await assert.rejects(status(root), /instance_identity_mismatch/);
   await assert.rejects(stop(root), /instance_identity_mismatch/);
+});
+
+test('控制管道按解析后的安装根命名，联接路径仍拒绝伪造实例', async t => {
+  const created = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-pipe-alias-'));
+  const canonical = await fs.realpath(created);
+  let requested = created;
+  let extraAlias;
+  if (created === canonical) {
+    extraAlias = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-pipe-junc-'));
+    requested = path.join(extraAlias, 'instance');
+    await fs.symlink(canonical, requested, 'junction');
+  }
+  t.after(async () => {
+    if (extraAlias) await fs.rm(extraAlias, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await fs.rm(created, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  });
+  const instance = await initializeRoot(requested);
+  assert.notEqual(path.resolve(requested), instance.root);
+  const wrong = { ...instance, instanceId: 'wrong-instance', launchId: 'wrong-launch', pid: process.pid, status: 'running' };
+  const web = http.createServer((_q, response) => response.end(JSON.stringify(wrong)));
+  await new Promise(resolve => web.listen(0, '127.0.0.1', resolve));
+  wrong.url = `http://127.0.0.1:${web.address().port}`;
+  const control = net.createServer(socket => socket.once('data', () => socket.end(JSON.stringify(wrong))));
+  await new Promise(resolve => control.listen(pipeName(requested), resolve));
+  t.after(async () => {
+    await new Promise(resolve => control.close(resolve));
+    await new Promise(resolve => web.close(resolve));
+  });
+  assert.equal(pipeName(requested), pipeName(instance.root));
+  await assert.rejects(status(instance.root), /instance_identity_mismatch/);
 });
 
 test('升级日志未恢复时禁止普通启动，不猜测切换已经完成', async t => {

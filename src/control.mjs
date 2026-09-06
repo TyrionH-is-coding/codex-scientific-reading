@@ -1,5 +1,6 @@
 import net from 'node:net';
 import fs from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -8,9 +9,11 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { initializeRoot, isolatedEnvironment, readJson } from './core.mjs';
 
 export function pipeName(root) {
-  const identity = process.platform === 'win32' ? path.resolve(root).toLowerCase() : path.resolve(root);
+  let resolved = path.resolve(root);
+  try { resolved = realpathSync(resolved); } catch { /* directory may not exist yet */ }
+  const identity = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
   const hash = createHash('sha256').update(identity).digest('hex').slice(0, 28);
-  return process.platform === 'win32' ? `\\\\.\\pipe\\csr-${hash}` : path.join(root, 'state', 'control.sock');
+  return process.platform === 'win32' ? `\\\\.\\pipe\\csr-${hash}` : path.join(resolved, 'state', 'control.sock');
 }
 
 export async function request(root, command = 'status') {
