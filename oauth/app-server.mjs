@@ -181,7 +181,11 @@ export class AppServer {
     return this.queue(threadId).take(signal)
   }
   respond(id, result) { this.send({ id, result }) }
-  async interrupt(threadId, turnId) { await this.request('turn/interrupt', { threadId, turnId }) }
+  async interrupt(threadId, turnId) {
+    await this.request('turn/interrupt', { threadId, turnId })
+    const queue = this.queues.get(threadId)
+    if (queue) queue.values = queue.values.filter(event => event?.params?.turn?.id !== turnId)
+  }
   async close() {
     this.fail(new Error('Codex app-server is closed'))
     if (!this.child) return

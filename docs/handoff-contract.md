@@ -11,7 +11,7 @@
 ## 已核实的结论
 
 1. 官方 rc.7 已有会话创建、恢复、消息、历史、取消 API，不需维护 DSH 核心分支。
-2. `session.create` 可预分配 ID；同 ID、cwd、preset 复用。`session.prompt` 的 `rpcId` 只作关联并存入消息来源，**不是投递幂等键**，再次发送会再次排队。
+2. `session.create` 可预分配 ID；同 ID、workspaceId、preset 复用。必须先 `workspace.create({path})` 再 `session.create({sessionId,workspaceId,agentPreset})`，不能只传 `cwd`。`session.prompt` 的 `rpcId` 只作关联并存入消息来源，**不是投递幂等键**，再次发送会再次排队。
 3. A 原有 `folder` 参数只是可选筛选；本轮已加入可信上下文、持久作业范围及最终发布校验。只加提示词、UI 筛选或一次 pre-execute 检查不能通过 PB-07。
 4. DSH `tools.guard()` 是单调拒绝入口；`tools.restrict()` 不会过滤同层本地注册。B 必须同时设置执行白名单，并让 A 实际服务强制范围。
 5. PDF/Reader 文件替换早于部分 SQLite 发布操作，单独在 `publish_reader()` 或 `commit_pdf_publication()` 加检查太晚。检查与文件替换共同持有根目录的短时 `scope-publication` 文件锁；分类移动/撤销也持同一锁。耗时解析不持该锁。
@@ -26,14 +26,15 @@
 POST /api/session.create
 Content-Type: application/json
 
-{"type":"client-request","rpcId":"request-uuid","method":"session.create","payload":{"sessionId":"session-csr-stable-uuid","cwd":"<本实例 workspace 绝对路径>","agentPreset":"scientific-reading"}}
+{"type":"client-request","rpcId":"request-uuid","method":"session.create","payload":{"sessionId":"session-csr-stable-uuid","workspaceId":"<workspace.create 返回的 id>","agentPreset":"scientific-reading"}}
 ```
 
-响应为 `{"type":"server-response","rpcId":"...","result":{"ok":true,"value":{...}}}`。必须核对 `rpcId`、`result.ok`，HTTP 200 本身不代表业务成功。重启后对同 ID 调用 create 会恢复持久会话；应固定 `cwd` 与 `agentPreset`，不要按名称重新寻找。
+响应为 `{"type":"server-response","rpcId":"...","result":{"ok":true,"value":{...}}}`。必须核对 `rpcId`、`result.ok`，HTTP 200 本身不代表业务成功。重启后对同 ID 调用 create 会恢复持久会话；应固定 `workspaceId` 与 `agentPreset`，不要按名称重新寻找。
 
 | 方法 | payload | 业务返回/边界 |
 | --- | --- | --- |
-| `session.create` | `sessionId,cwd,agentPreset` | `{sessionId,agentPreset}`；同 ID 不同 cwd/preset 冲突 |
+| `workspace.create` | `path` | `{workspace,created}`；同规范路径幂等 |
+| `session.create` | `sessionId,workspaceId,agentPreset` | `{sessionId,agentPreset}`；不可同时传 cwd；同 ID 不同 workspace/preset 冲突 |
 | `session.list` | `{}` | `{items:[{sessionId,running,agentPreset,parentSessionId,...}]}`；cold running=false 不代表作业停止 |
 | `session.history` | `sessionId,maxMessages,beforeSeq?` | 事件与投影；读取本身不恢复 Agent |
 | `session.prompt` | `sessionId,mode:"queue",content:[{type:"text",text}],clientTimeZone:"Asia/Shanghai"` | `{accepted:true}` 仅表示接收 |

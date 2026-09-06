@@ -43,14 +43,21 @@ const python = path.join(runtime, 'venv', 'Scripts', 'python.exe');
 const app = path.join(slot, 'app');
 const env = isolatedEnvironment(root, process.env, { node, python });
 async function run(command, args, label, cwd = root) {
+  const started = Date.now();
   console.error(label);
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, env, windowsHide: true, shell: false, stdio: ['ignore', 'pipe', 'pipe'] });
+    const heartbeat = setInterval(() => {
+      console.error(`${label} … ${Math.round((Date.now() - started) / 1000)}s`);
+    }, 15000);
     let stdout = '';
     child.stdout.on('data', data => { stdout += data; });
     child.stderr.on('data', data => process.stderr.write(data));
-    child.on('error', reject);
-    child.on('close', code => code === 0 ? resolve(stdout.trim()) : reject(new Error(label + ': exit ' + code)));
+    child.on('error', error => { clearInterval(heartbeat); reject(error); });
+    child.on('close', code => {
+      clearInterval(heartbeat);
+      code === 0 ? resolve(stdout.trim()) : reject(new Error(label + ': exit ' + code));
+    });
   });
 }
 await recoverRelease(root);

@@ -118,6 +118,19 @@ test('A 门槛退出码保持真实状态，scope 错误不会伪装为正常任
   assert.equal(calls, 2);
 });
 
+test('job-status 失败时返回完整 JSON，并把 detail.error 作为可识别错误', async () => {
+  const api = {
+    withEngineScope: (_scope, run) => run(),
+    engineJson: async () => ({
+      ok: false,
+      json: { job_id: 'job_1', status: 'failed', paper_id: 'p1', detail: { error: 'full_read_parent_mismatch' } },
+    }),
+  };
+  const job = await engineAdapter(api, {})(['job-status', '--job-id', 'job_1']);
+  assert.equal(job.status, 'failed');
+  assert.equal(job.detail.error, 'full_read_parent_mismatch');
+});
+
 test('完成以真实 Reader HTTP 字节和 SHA 为准，RPC 校验完整回执', async t => {
   const html = '<!doctype html><p>正式 Reader</p>';
   let corrupt = false;

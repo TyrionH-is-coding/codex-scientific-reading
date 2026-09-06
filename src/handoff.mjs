@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { readJson, writeJson } from './core.mjs';
+import { ensureInstanceWorkspace, ensureLiteratureDefault } from './workspace.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -64,9 +65,21 @@ export class Handoff {
       await this.save();
     }
     if (!binding.active) throw new Error('folder_archived');
-    await this.rpc('session.create', { sessionId: binding.sessionId, cwd: path.join(this.root, 'workspace'), agentPreset: 'scientific-reading' });
+    await this.prepareHost();
+    await this.rpc('session.create', {
+      sessionId: binding.sessionId,
+      workspaceId: this.data.workspace.workspaceId,
+      agentPreset: 'scientific-reading',
+    });
     await this.rpc('session.rename', { sessionId: binding.sessionId, title: '文献 · ' + folder.name });
     return { ...binding, name: folder.name };
+  }
+  async prepareHost() {
+    const workspace = await ensureInstanceWorkspace(this.rpc, this.root);
+    this.data.workspace = { workspaceId: workspace.workspaceId, path: workspace.path };
+    await this.save();
+    await ensureLiteratureDefault(this.rpc);
+    return this.data.workspace;
   }
   async checkedTask(taskId) {
     const task = Object.values(this.data.tasks).find(value => value.taskId === taskId);
@@ -110,7 +123,11 @@ export class Handoff {
       const job = await this.engine(['job-status', '--job-id', task.jobId], undefined, scope);
       if (job.paper_id !== task.paperId || job.job_id !== task.jobId) throw new Error('job_identity_mismatch');
       task.job = job;
-      task.error = null;
+      task.error = job.status === 'failed'
+        ? (typeof job.detail?.error === 'string' && job.detail.error ? job.detail.error
+          : typeof job.detail?.reason_code === 'string' && job.detail.reason_code ? job.detail.reason_code
+          : 'job_failed')
+        : null;
       task.status = ['waiting_user', 'waiting_agent', 'failed'].includes(job.status) ? job.status
         : job.status === 'interrupted' ? 'waiting_user' : 'dispatched';
       if (job.status === 'completed') {

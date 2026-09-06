@@ -20,11 +20,13 @@ async function fixture(t) {
     }
     if (args[0] === 'full-read-pipeline-start') { counters.started++; return { parent_job_id: 'job_1234567890abcdef' }; }
     if (args[0] === 'job-status') return { paper_id: 'paper1', status: state.job, job_id: 'job_1234567890abcdef',
-      detail: { reason_code: state.job === 'waiting_agent' ? 'translate_full_read' : 'pdf_required', required_input: { batch_id: 'b1' } } };
+      detail: { error: state.jobError, reason_code: state.job === 'waiting_agent' ? 'translate_full_read' : 'pdf_required', required_input: { batch_id: 'b1' } } };
     if (args[0] === 'scope-folder-state') return { archived: true };
     throw new Error('unexpected engine action ' + args[0]);
   };
-  const rpc = async (method, _payload, rpcId) => {
+  const rpcCalls = [];
+  const rpc = async (method, payload, rpcId) => {
+    rpcCalls.push({ method, payload, rpcId });
     if (method === 'session.prompt') {
       counters.prompted++;
       state.messages.push({ event: { type: 'user/message', data: { source: { kind: 'user', rpcId } } } });
@@ -32,6 +34,31 @@ async function fixture(t) {
       return { accepted: true };
     }
     if (method === 'session.history') return { events: state.messages, hasMore: false };
+    if (method === 'workspace.create') {
+      return {
+        workspace: {
+          workspaceId: 'ws-1', path: payload.path, title: 'workspace',
+          sessionIds: [], createdAt: 't', updatedAt: 't',
+        },
+        created: rpcCalls.filter(call => call.method === 'workspace.create').length === 1,
+      };
+    }
+    if (method === 'settings.describe') {
+      return {
+        writable: true, hasDocument: true,
+        namespaces: [{
+          ns: 'agent-presets',
+          value: { default: state.presetDefault ?? 'standard' },
+          user: state.presetUser,
+          revision: state.presetRevision ?? 1,
+        }],
+      };
+    }
+    if (method === 'settings.update') {
+      state.presetUser = { ...(state.presetUser ?? {}), ...payload.patch };
+      state.presetDefault = payload.patch.default ?? state.presetDefault;
+      return { ns: payload.ns, value: { default: state.presetDefault }, user: state.presetUser, revision: 2 };
+    }
     return {};
   };
   const deps = { instance, engine, rpc,
@@ -41,7 +68,7 @@ async function fixture(t) {
     if (!state.reader) throw new Error('artifact_not_ready');
     return { readerUrl: '/sr/reader/paper1', sha256: 'verified-reader' };
   } };
-  return { root, deps, state, counters, service: await Handoff.open(root, deps) };
+  return { root, deps, state, counters, rpcCalls, service: await Handoff.open(root, deps) };
 }
 
 test('并发重复交接只启动一个任务，重命名不改变绑定，重启后读回同一任务', async t => {
@@ -137,4 +164,46 @@ test('已接收回执缺乏原生证据时持久化 uncertain，不把未知当�
   const unavailable = await Handoff.open(root, deps);
   assert.equal((await unavailable.dispatch(task.taskId)).dispatch.status, 'uncertain');
   assert.equal(counters.prompted, 1);
+});
+
+test('绑定分类时注册自有工作区并关联主管，不传 cwd；重复绑定不新建工作区身份', async t => {
+  const { root, service, rpcCalls } = await fixture(t);
+  const first = await service.bind('f1');
+  const created = rpcCalls.filter(call => call.method === 'workspace.create');
+  assert.equal(created.length, 1);
+  assert.equal(created[0].payload.path, await fs.realpath(path.join(root, 'workspace')));
+  const sessions = rpcCalls.filter(call => call.method === 'session.create');
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].payload.sessionId, first.sessionId);
+  assert.equal(sessions[0].payload.workspaceId, 'ws-1');
+  assert.equal(sessions[0].payload.agentPreset, 'scientific-reading');
+  assert.equal(sessions[0].payload.cwd, undefined);
+  await service.bind('f1');
+  assert.equal(rpcCalls.filter(call => call.method === 'workspace.create').length, 2);
+  assert.equal(rpcCalls.filter(call => call.method === 'workspace.create')[1].payload.path, created[0].payload.path);
+  assert.deepEqual(rpcCalls.filter(call => call.method === 'session.create').map(call => call.payload.sessionId), [first.sessionId, first.sessionId]);
+});
+
+test('全新实例在用户未设置时把默认 Agent 设为文献模式，已有用户选择则保留', async t => {
+  const { service, rpcCalls, state } = await fixture(t);
+  await service.bind('f1');
+  const updates = rpcCalls.filter(call => call.method === 'settings.update');
+  assert.equal(updates.length, 1);
+  assert.deepEqual(updates[0].payload, { ns: 'agent-presets', patch: { default: 'scientific-reading' }, expectedRevision: 1 });
+  rpcCalls.length = 0;
+  state.presetUser = { default: 'standard' };
+  state.presetRevision = 4;
+  await service.bind('f1');
+  assert.equal(rpcCalls.filter(call => call.method === 'settings.update').length, 0);
+});
+
+test('任务失败时透传 job.detail.error，不把顶层 error 留空', async t => {
+  const { service, state } = await fixture(t);
+  const task = await service.submit({ idempotencyKey: 'fail', folderId: 'f1', paperId: 'paper1', runAgent: false });
+  state.job = 'failed';
+  state.jobError = 'full_read_parent_mismatch';
+  const refreshed = await service.task(task.taskId);
+  assert.equal(refreshed.status, 'failed');
+  assert.equal(refreshed.error, 'full_read_parent_mismatch');
+  assert.equal(refreshed.job.detail.error, 'full_read_parent_mismatch');
 });

@@ -22,14 +22,6 @@ export async function apply(ctx, config) {
     if (claimed?.turn !== turn) claims.set(agent, claimed = { turn, rpcIds: new Set() });
     if (message.source?.kind === 'user') claimed.rpcIds.add(message.source.rpcId);
   });
-  async function sessionAgent(sessionId) {
-    // Native session.create restores a persisted inbox without sending a prompt.
-    if (!ctx.agents.get(sessionId)) await dshRpc(url(), 'session.create', {
-      sessionId, cwd: path.join(root, 'workspace'), agentPreset: 'scientific-reading' });
-    const agent = ctx.agents.get(sessionId);
-    if (!agent) throw new Error('native_session_unavailable');
-    return agent;
-  }
   const service = await Handoff.open(root, { instance, engine,
     rpc: (method, payload, id) => dshRpc(url(), method, payload, id),
     dispatchEvidence: async (sessionId, rpcId) => inspectDispatchEvidence(await sessionAgent(sessionId), rpcId),
@@ -38,6 +30,18 @@ export async function apply(ctx, config) {
       return cancelOwnedDispatch(agent, task, claims.get(agent));
     },
     reader: (paper, scope) => verifyReader(engine, url(), paper, scope) });
+  await service.prepareHost().catch(() => {});
+  async function sessionAgent(sessionId) {
+    // Native session.create restores a persisted inbox without sending a prompt.
+    if (!ctx.agents.get(sessionId)) {
+      const workspace = service.data.workspace ?? await service.prepareHost();
+      await dshRpc(url(), 'session.create', {
+        sessionId, workspaceId: workspace.workspaceId, agentPreset: 'scientific-reading' });
+    }
+    const agent = ctx.agents.get(sessionId);
+    if (!agent) throw new Error('native_session_unavailable');
+    return agent;
+  }
   ctx.tools.guard(exec => categoryGuard(service, exec));
   ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
     const assembly = await next();
@@ -48,7 +52,9 @@ export async function apply(ctx, config) {
     const scope = service.scopeFor(exec.agent?.session?.id);
     if (!scope || !CATEGORY_TOOLS.has(exec.name)) throw new Error('scope_command_forbidden');
     // A's download status has a TS fast path; require the scoped Python fact first.
-    if (exec.name === 'sr_job_status') await engine(['job-status', '--job-id', exec.arguments.job_id], undefined, scope);
+    if (exec.name === 'sr_job_status') {
+      return api.withEngineScope(scope, () => engine(['job-status', '--job-id', exec.arguments.job_id], undefined, scope));
+    }
     return api.withEngineScope(scope, next);
   });
   ctx.on('agent/created', ({ agent }) => {

@@ -119,6 +119,23 @@ test('PB-11 model switch during tool continuation preserves result without using
   assert.equal(server.responses.length, 0)
 })
 
+test('Stop generating 后切换模型，下一回合不消费上一 turn 的中断事件', async () => {
+  const server = new Server()
+  const adapter = new SafeCodexAdapter(server)
+  const first = await Array.fromAsync(adapter.stream({ ...base, messages: [user('translate')] }))
+  server.events.unshift({
+    method: 'turn/completed',
+    params: { threadId: 'native-1', turn: { id: 'stale-turn', status: 'interrupted' } },
+  })
+  const next = await Array.fromAsync(adapter.stream({
+    ...base,
+    model: 'other-fixture-model',
+    messages: [user('translate'), assistant(first), user('continue after stop')],
+  }))
+  assert.equal(next.at(-1).reason.kind, 'stop')
+  assert.equal(server.turns.at(-1).input.model, 'other-fixture-model')
+})
+
 test('PB-08 account metadata update during a turn cannot destroy its replay mapping', async () => {
   const server = new Server()
   const adapter = new SafeCodexAdapter(server)

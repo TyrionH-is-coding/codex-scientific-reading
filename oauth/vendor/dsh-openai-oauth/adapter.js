@@ -267,6 +267,7 @@ export class CodexAppServerAdapter extends LlmAdapter {
                 }
                 if (event.method === 'turn/completed') {
                     const turn = event.params.turn;
+                    if (turn?.id && session.turnId && turn.id !== session.turnId) continue;
                     if (turn.status === 'failed') {
                         const error = turn.error;
                         throw new LlmError(String(error?.message ?? 'Codex turn failed'), 'CODEX_ERROR');

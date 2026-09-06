@@ -115,7 +115,7 @@ export async function start(root, { maintenance = false } = {}) {
     }
     await delay(100);
   }
-  throw new Error('start_timeout: see state/logs/supervisor.log and dsh.log');
+  throw new Error('start_timeout: host may still be starting; run status before reinstall. see state/logs/supervisor.log and dsh.log');
 }
 
 export async function stop(root) {

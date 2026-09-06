@@ -33,8 +33,15 @@ export function apply(ctx) {
   process.on('message', onMessage);
   process.on('disconnect', onDisconnect);
   ctx.on('dispose', () => { dispose(); disposePage(); process.off('message', onMessage); process.off('disconnect', onDisconnect); });
-  ctx.get('loader').await().then(() => {
-    if ([...ctx.get('loader').entries()].some(entry => !entry.disabled && entry.fiber?.state !== 2)) return;
-    process.send?.({ type: 'workbench-ready', ...identity, url: `http://127.0.0.1:${ctx.webServer.port}` });
-  }).catch(() => {});
+  let announced = false;
+  const announce = () => {
+    const port = ctx.webServer.port;
+    if (announced || !port) return false;
+    announced = true;
+    process.send?.({ type: 'workbench-ready', ...identity, url: `http://127.0.0.1:${port}` });
+    return true;
+  };
+  const timer = setInterval(() => { if (announce()) clearInterval(timer); }, 100);
+  timer.unref?.();
+  ctx.get('loader').await().then(() => { announce(); clearInterval(timer); }).catch(() => clearInterval(timer));
 }

@@ -15,7 +15,7 @@ powershell.exe -NoProfile -File '<Skill目录>\scripts\workbench.ps1' start
 
 `ok=true`、`status=running` 才表示启动成功。不要由 cwd、固定端口或磁盘 PID 推测实例。相同实例重复启动复用原进程。
 
-检查当前 Codex 是否有能打开并读取内置浏览器的工具。按浏览器工具文档选择 in-app browser，在 `url + '/__workbench'` 核对产品、instanceId、launchId 与控制脚本相同，然后在同一标签页进入 `url` 并确认 DSH 页面。JSON 身份接口有时不能被内置浏览器当页面打开，使用 HTML 实例页。只有 HTTP 200 不等于完成浏览器验收。浏览器工具不可用时准确说明能力缺失，保留已验证地址，不自行换成普通 Chrome。
+先探测当前会话实际可用的浏览器 runtime，不要只看有没有名为 browser 的 Skill 入口。skills 目录为空时，受信 Node REPL / in-app browser 仍可能连上内置浏览器并读 DOM。只有探测失败才报告“浏览器能力不可用”；只有入口未暴露时写“未暴露 Skill 入口”。按浏览器工具文档打开 `url + '/__workbench'`，核对产品、instanceId、launchId 与控制脚本相同，然后在同一标签页进入 `url` 并确认 DSH 页面。JSON 身份接口有时不能被内置浏览器当页面打开，使用 HTML 实例页。只有 HTTP 200 不等于完成浏览器验收。不要自行换成普通 Chrome。
 
 脚本还支持 `status`、`stop`、`rollback`、`recover`。关闭标签页不必停止宿主；失败时只读取与错误有关的自有日志段。不得按进程名、端口或陈旧 PID 杀进程。
 
