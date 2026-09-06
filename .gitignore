@@ -1,0 +1,6 @@
+node_modules/
+inputs/
+.local/
+outputs/
+*.log
+runtime/scientific-reading.tgz
