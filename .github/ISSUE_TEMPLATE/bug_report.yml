@@ -1,0 +1,53 @@
+name: 使用问题或错误报告
+description: 报告 B 工作台的安装、启动、分类交接、PDF 续接或订阅登录问题。
+title: "[问题] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供最短复现步骤。提交前去除密钥、Cookie、验证码、私人路径和未公开研究内容。
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题发生在哪一步
+      options:
+        - 安装、启动或实例身份
+        - 分类绑定或交接任务
+        - OA / 手动 PDF 续接
+        - Codex 订阅登录或额度
+        - 升级、回退、卸载或迁移
+        - 不确定
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 工作台版本
+      description: 例如 v0.1.0-rc.1 的 zip；源码安装请附提交号。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: Windows 版本、PowerShell 版本、是否刚升级。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      validations:
+        required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: 预期结果与实际结果
+      validations:
+        required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: 错误码或少量日志（可选）
+      description: 只贴相关片段，先移除敏感内容和本机路径。
+      render: text

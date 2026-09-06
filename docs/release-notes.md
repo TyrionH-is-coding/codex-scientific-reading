@@ -16,8 +16,10 @@
 
 ## 安装与验证
 
+从私有 prerelease 下载 zip 与 `SHA256SUMS.txt`：https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1 。对应源码为 `645d41a19fc879b0dd362245aaf8b03f5961651e`。GitHub 自动生成的 Source code 压缩包不是安装器。
+
 解压 zip 后按照 [安装说明](../README.md) 执行安装器，首次使用调用 `$codex-scientific-reading`。程序需联网获取清单中的固定依赖。
 
-附件的 SHA 在 `SHA256SUMS.txt`；zip 内 `BUILD-MANIFEST.json` 包含逐文件源码校验。具体已测组合和未测项目见 zip 旁的 `ACCEPTANCE.md`。本候选的安装、离线回归及本地模型工具回合，不代表真实账号授权、网络资源可用性或论文内容已全面验收。
+附件的 SHA 在同一 Release 的 `SHA256SUMS.txt`；zip 内 `BUILD-MANIFEST.json` 包含逐文件源码校验。具体已测组合和未测项目见 `ACCEPTANCE.md`。本候选的安装、离线回归及本地模型工具回合，不代表真实账号授权、网络资源可用性或论文内容已全面验收。
 
 自动化无法取得非 OA 正文时会等待用户提供 PDF。登录、人机验证和个人阅读确认由用户完成。
