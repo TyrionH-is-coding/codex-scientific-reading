@@ -1,8 +1,8 @@
-# Codex 文献工作台
+# Deep Literature for Codex
 
 由 Codex 对话管理全库，在 Codex 内置浏览器中运行独立 DeepSeek Harness（DSH）；每个文献分类绑定一个持久 DSH 管理会话。文献处理复用 DSH Scientific Reading 的固定发布包，SQLite 保存事实，Excel 是派生视图。
 
-当前版本为 **0.1.0-rc.2 公测候选**，请从 [rc.2 Release](https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.2) 下载成对安装附件。已公开的 [rc.1 Release](https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1) 附件不包含这轮修复；测试 rc.2 请使用与本分支对应、附有 `SHA256SUMS.txt` 的候选 zip 和配套 A 包，不要使用 GitHub 自动生成的 Source code 压缩包。支持 Windows x64、PowerShell 5.1+，需要联网安装，无需预装全局 DSH、Node 或 Python。Codex 桌面端必须提供可打开、读取页面的内置浏览器能力；Skill 会实际检查。全新机器步骤见 [START_HERE.md](START_HERE.md)。
+当前版本为 **0.1.0-rc.3 公测候选**。从 [rc.3 Release](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.3) 下载 `deep-literature-for-codex-0.1.0-rc.3-win-x64.zip` 和 `SHA256SUMS.txt`，不要使用自动生成的 Source code 压缩包。支持 Windows x64、PowerShell 5.1+，无需预装 Node、Python 或 DSH。
 
 ## 安装与打开
 
@@ -16,7 +16,7 @@ powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific
 
 安装后在 Codex 调用 `$codex-scientific-reading`，例如：
 
-> 打开文献工作台。创建“抗磷脂综合征”分类，把这篇论文加入该分类并开始精读。
+> 打开 Deep Literature for Codex。创建“抗磷脂综合征”分类，把这篇论文加入该分类并开始精读。
 
 Codex 核对当前实例身份后，在内置浏览器打开 DSH。分类绑定由 Codex 完成；直接在 DSH 新建的未绑定会话不能调用文献管理工具。关闭标签页保留后台宿主，重开会复用原实例和会话。
 
@@ -64,3 +64,7 @@ Codex 交接和重试使用幂等键。分类会话只可访问本分类；跨�
 开发回归：`npm test`。真实安装、浏览器、隔离、恢复以及尚需本人登录的覆盖边界，以发行包随附的验收记录为准。不能用模拟 OAuth 多轮通过代替真实账号已验收，也不能用 Reader 哈希一致代替论文语义准确。
 
 上游许可与固定来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。安装过程只使用发行包固定的 A tarball；源码克隆者需取得 `runtime/pins.json` 所指的相同文件，不能任意替换。
+
+## 名称与兼容
+
+产品名统一为 **Deep Literature for Codex**。为保持旧文库、实例身份和 Skill 升级兼容，安装目录 `CodexScientificReading`、内部产品标识 `codex-scientific-reading` 和 `$codex-scientific-reading` 调用入口保留。A 引擎是独立上游依赖，包名不随本产品改名。rc.1/rc.2 历史包不重写。

@@ -1,11 +1,11 @@
 export function loginPage(nonce) {
   return `<!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Codex 订阅 · 文献工作台</title>
+<title>Codex 订阅 · Deep Literature for Codex</title>
 <style nonce="${nonce}">
 *{box-sizing:border-box}body{margin:0;background:#f6f7f9;color:#172330;font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif}main{max-width:800px;margin:48px auto;padding:0 24px}a{color:#17605d}h1{font-size:30px;margin:8px 0}h2{font-size:20px;margin:0 0 12px}.card{background:white;border:1px solid #dde3e8;border-radius:12px;padding:24px;margin:20px 0}.muted{color:#576674}button,.button{font:inherit;border:1px solid #9fadb8;background:white;border-radius:7px;padding:8px 15px;cursor:pointer;color:#172330;text-decoration:none}button.primary{background:#17605d;border-color:#17605d;color:white}button:disabled{opacity:.45;cursor:default}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.badge{display:inline-block;border-radius:20px;padding:3px 12px;background:#edf2f5}#feedback{min-height:1.7em;color:#754b12}li{margin:10px 0}small{font-size:14px}
 </style>
-<main><a href="/">← 返回 DSH</a><h1>Codex 订阅</h1>
+<main><a href="/">← 返回 Deep Literature for Codex</a><h1>Codex 订阅</h1>
 <p class="muted">在本工作台内使用 ChatGPT / Codex 订阅。普通模型仍在 DSH 的模型设置中管理。</p>
 <section class="card"><h2>登录状态</h2><span id="status" class="badge" role="status">正在读取状态…</span><p id="plan" class="muted"></p>
 <div class="actions"><button id="login" class="primary" disabled>使用 ChatGPT 登录</button><button id="cancel" disabled>取消登录</button><button id="logout" disabled>退出登录</button><button id="refresh">刷新状态</button></div>

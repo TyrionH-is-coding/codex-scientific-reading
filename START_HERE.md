@@ -1,8 +1,8 @@
-# 从发行包开始
+# Deep Literature for Codex：从发行包开始
 
 本仓库和 GitHub Release 已公开。下面步骤面向全新 Windows x64 机器，不假设本机已经装过 Node、Python、DSH 或本 Skill，也不假设另一台电脑已经装过。
 
-1. 打开 https://github.com/TyrionH-is-coding/codex-scientific-reading/releases
+1. 打开 https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases
 2. 下载当前发布候选的 zip 与 `SHA256SUMS.txt`。不要使用 GitHub 自动生成的 Source code 压缩包。
 3. 按 `SHA256SUMS.txt` 核对 zip。
 4. 解压后在该目录执行：

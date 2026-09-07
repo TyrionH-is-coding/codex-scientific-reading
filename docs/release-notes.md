@@ -1,6 +1,6 @@
-# Codex 文献工作台 0.1.0-rc.2
+# Deep Literature for Codex 0.1.0-rc.3
 
-Windows x64 公测候选。修复新用户安装与真实文献精读流程的阻断；保留 rc.1 历史附件。
+Windows x64 公测候选。本版统一更名为 Deep Literature for Codex，更新仓库地址、安装包名、实例页面、订阅页面和 Skill 展示说明；文献引擎与 rc.2 相同，旧实例和文库兼容。修复新用户安装与真实文献精读流程的阻断；保留 rc.1 历史附件。
 
 ## 变化
 

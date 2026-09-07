@@ -10,7 +10,7 @@
 
 ## 父运行时接入
 
-包名与版本为 `codex-scientific-reading-oauth@0.1.0-rc.1`。父安装器把本目录的发布文件复制到 npm 根下的 `oauth/`，由父 runtime 声明 `file:oauth` 依赖；无需运行上游全局安装器。依赖为官方 `@openai/codex@0.146.0`，宿主 peer 为 `@deepseek-ai/cordis@4.0.1` 与 `@deepseek-ai/dsh-llm@0.1.0-rc.7`。开发用的原始 rc.7 依赖单独列在本包 devDependencies。
+包名与版本为 `codex-scientific-reading-oauth@0.1.0-rc.3`。父安装器把本目录的发布文件复制到 npm 根下的 `oauth/`，由父 runtime 声明 `file:oauth` 依赖；无需运行上游全局安装器。依赖为官方 `@openai/codex@0.146.0`，宿主 peer 为 `@deepseek-ai/cordis@4.0.1` 与 `@deepseek-ai/dsh-llm@0.1.0-rc.7`。开发用的原始 rc.7 依赖单独列在本包 devDependencies。
 
 包的 `cordis.patch.yml` 插入 `scientific-reading-codex` 行。父 profile 在该行指定：
 

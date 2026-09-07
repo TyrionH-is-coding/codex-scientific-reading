@@ -15,7 +15,7 @@ await verifyFile(archive, pins.plugin.sha256);
 // Never replace an existing reviewed candidate.
 await fs.mkdir(destination);
 const payload = path.join(destination, 'payload');
-const packageName = `codex-scientific-reading-${VERSION}-win-x64`;
+const packageName = `deep-literature-for-codex-${VERSION}-win-x64`;
 const packageRoot = path.join(payload, packageName);
 await fs.mkdir(packageRoot, { recursive: true });
 async function copy(relative, from = path.join(source, relative)) {
@@ -44,7 +44,7 @@ async function inventory(directory) {
 }
 await inventory(packageRoot);
 await writeJson(path.join(packageRoot, 'BUILD-MANIFEST.json'), { schema: 1, product: 'codex-scientific-reading', version: VERSION,
-  channel: pins.channel, sourceCommit, pluginSourceCommit: pins.plugin.sourceCommit, pins, files });
+  displayName: 'Deep Literature for Codex', channel: pins.channel, sourceCommit, pluginSourceCommit: pins.plugin.sourceCommit, pins, files });
 const zip = path.join(destination, packageName + '.zip');
 await new Promise((resolve, reject) => {
   const child = spawn(path.join(process.env.SYSTEMROOT, 'System32', 'tar.exe'), ['-a', '-cf', zip, packageName],

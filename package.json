@@ -1,9 +1,9 @@
 {
-  "name": "codex-scientific-reading",
-  "version": "0.1.0-rc.2",
+  "name": "deep-literature-for-codex",
+  "version": "0.1.0-rc.3",
   "private": true,
   "type": "module",
-  "description": "Codex 指挥的独立 DSH 文献工作台",
+  "description": "Deep Literature for Codex：Codex 指挥的独立文献工作台",
   "scripts": {
     "test": "node --test tests/*.test.mjs"
   },
