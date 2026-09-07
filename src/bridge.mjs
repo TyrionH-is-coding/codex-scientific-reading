@@ -102,8 +102,15 @@ export async function apply(ctx, config) {
         return { ...result, derived };
       }
       case 'item': return engine(['library-item-v2', '--paper-id', required(p.paperId)]);
+      case 'personal_update': return engine(['personal-record-update', '--paper-id', required(p.paperId)], { fields: p.fields, expected: p.expected });
+      case 'excel_sync': return engine(['xlsx-refresh']);
+      case 'excel_open': return engine(['xlsx-locate', '--paper-id', required(p.paperId)]);
+      case 'environment': return engine(['environment-status']);
       case 'list': return engine(['library-list-v2', '--page', String(p.page ?? 1), '--page-size', String(p.pageSize ?? 50),
-        ...(p.folderId ? ['--folder-id', required(p.folderId)] : []), ...(p.query ? ['--query', required(p.query)] : [])]);
+        ...(p.folderId ? ['--folder-id', required(p.folderId)] : []), ...(p.query ? ['--query', required(p.query)] : []),
+        ...(p.readingState ? ['--reading-state', required(p.readingState)] : []),
+        ...(p.personalRecentDays != null ? ['--personal-recent-days', String(p.personalRecentDays)] : []),
+        ...(p.orderBy ? ['--order-by', required(p.orderBy)] : [])]);
       case 'move': {
         const folders = await engine(['folder-list']);
         const folder = folders.find(row => row.folder_id === p.folderId);

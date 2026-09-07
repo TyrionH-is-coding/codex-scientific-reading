@@ -71,6 +71,8 @@ try {
   check('installed launcher starts a real host', started.json.ok && started.json.status === 'running');
   const identity = await fetch(started.json.url + '/__workbench/identity').then(r => r.json());
   check('HTTP identity matches the installed instance', identity.instanceId === started.json.instanceId);
+  const entry = await fetch(started.json.entryUrl).then(r => r.text());
+  check('entry page explains isolated model setup before browsing', entry.includes('外层 Codex') && entry.includes('MinerU') && entry.includes('/api/codex-oauth/ui'));
   const page = await fetch(started.json.url).then(r => ({ ok: r.ok, contentType: r.headers.get('content-type') }));
   check('workbench serves its web UI', page.ok && page.contentType.includes('text/html'));
   const oauth = await fetch(started.json.url + '/api/codex-oauth').then(r => r.json());
@@ -89,8 +91,22 @@ try {
   check('real installed engine stores a paper', Boolean(ingest.paper_id));
   await run(installed.python, ['-I', '-X', 'utf8', path.join(source, 'scripts', 'fixtures', 'mineru-empty-visual.py'), path.join(temporary, 'mineru-fixture')]);
   check('installed wheel passes MinerU empty visual regression with provenance and integrity guards', true);
-  const xlsx = JSON.parse((await engine(['xlsx-refresh'])).stdout);
+  const api = async (action, payload = {}) => {
+    const response = await fetch(started.json.url + '/__workbench/api', { method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, payload, instanceId: started.json.instanceId }) });
+    const reply = await response.json();
+    assert.equal(reply.ok, true, JSON.stringify(reply));
+    return reply.value;
+  };
+  const before = await api('item', { paperId: ingest.paper_id });
+  const fields = { reading_state: '在读', project_relevance: 'platform-relevance-fixture', next_action: '核对图 2' };
+  const expected = Object.fromEntries(Object.keys(fields).map(key => [key, before[key]]));
+  check('Codex API updates only expected personal fields', (await api('personal_update', { paperId: ingest.paper_id, fields, expected })).changed);
+  const xlsx = await api('excel_sync');
   check('real installed engine generates the Excel library', xlsx.status === 'success' && xlsx.rows === 1);
+  check('live status includes the completed Excel receipt', (await api('environment')).library.xlsx_last_export.export_id === xlsx.export_id);
+  const found = await api('list', { query: 'platform-relevance-fixture', readingState: '在读', orderBy: 'personal_updated_at' });
+  check('personal notes and human reading state are searchable through Codex', found.items.length === 1 && found.items[0].paper_id === ingest.paper_id);
   await run(installed.python, ['-I', '-X', 'utf8', '-c',
     "from scientific_reading.secret_store import MineruSecretStore; from pathlib import Path; import sys; s=MineruSecretStore(Path(sys.argv[1]));\ntry:\n s.save('synthetic-platform-smoke'); assert s.load()=='synthetic-platform-smoke'\nfinally:\n s.delete()\nassert s.load() is None\nprint('native credential roundtrip passed')", path.join(temporary, 'keyring-fixture')]);
   check('native OS credential store saves, reads and deletes an instance-scoped credential', true);
@@ -112,6 +128,15 @@ try {
   check('all three saved Excel fields are written back to the library', true);
   const backup = JSON.parse((await engine(['library-backup', '--output', path.join(temporary, 'library.zip'), '--timeout', '30'])).stdout);
   check('consistent library backup completes', backup.status === 'completed');
+  const restoredRoot = path.join(temporary, '恢复 library');
+  const restored = JSON.parse((await engine(['library-restore', '--archive', path.join(temporary, 'library.zip'), '--target', restoredRoot])).stdout);
+  check('installed engine restores a complete library into a new directory', restored.status === 'completed');
+  const restoredEngine = async args => JSON.parse((await run(installed.python,
+    ['-I', '-X', 'utf8', '-m', 'scientific_reading', '--data-root', restoredRoot, ...args])).stdout);
+  check('restored workbook baseline permits a fresh export', (await restoredEngine(['xlsx-refresh'])).status === 'success');
+  const restoredItem = await restoredEngine(['library-item-v2', '--paper-id', ingest.paper_id]);
+  check('restore preserves human reading state, project relation and notes', restoredItem.reading_state === '在读'
+    && restoredItem.project_relevance === 'platform-relevance-fixture' && restoredItem.user_notes === 'saved platform note');
   report.stopSeconds = (await control('stop')).seconds;
   const restart = await control('start');
   report.restartSeconds = restart.seconds;

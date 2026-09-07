@@ -26,14 +26,14 @@ async function copy(relative, from = path.join(source, relative)) {
   await fs.copyFile(from, to);
 }
 for (const file of ['README.md', 'START_HERE.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'package.json', 'install.ps1', 'workbench.ps1', 'uninstall.ps1', 'install.sh', 'workbench.sh', 'uninstall.sh']) await copy(file);
-for (const folder of ['src', 'skills', 'scripts', 'tests']) {
+for (const folder of ['src', 'skills', 'scripts', 'tests', 'demos']) {
   await fs.cp(path.join(source, folder), path.join(packageRoot, folder), { recursive: true,
-    filter: file => !file.split(path.sep).some(part => ['node_modules', '.work', '.git', 'outputs', 'test-results'].includes(part)) });
+    filter: file => !file.split(path.sep).some(part => ['node_modules', '.work', '.git', 'outputs', 'test-results', '__pycache__'].includes(part)) });
 }
 for (const file of ['package.json', 'package-lock.json', 'pins.json', 'posix-node.tsv', 'requirements.in', 'requirements.lock']) await copy('runtime/' + file);
 for (const file of ['index.mjs', 'adapter.mjs', 'app-server.mjs', 'control.mjs', 'http.mjs', 'ui.mjs', 'cordis.patch.yml', 'LICENSE', 'README.md', 'package.json', 'package-lock.json', 'provenance.json']) await copy('oauth/' + file);
 for (const file of ['adapter.js', 'LICENSE']) await copy('oauth/vendor/dsh-openai-oauth/' + file);
-for (const file of ['lifecycle.md', 'oauth.md', 'handoff-contract.md', 'release-notes.md', 'acceptance.md', 'mineru-api-key.md', 'excel-library.md', 'platforms.md', 'model-tests.md', 'issue-6.md']) await copy('docs/' + file);
+for (const file of ['lifecycle.md', 'oauth.md', 'handoff-contract.md', 'release-notes.md', 'acceptance.md', 'mineru-api-key.md', 'excel-library.md', 'platforms.md', 'model-tests.md', 'issue-6.md', 'excel-v0.1-redesign.md', 'excel-v0.1-acceptance.md', 'macos-first-run-followup.md', 'roadmap-v0.2.md']) await copy('docs/' + file);
 await copy('inputs/scientific-reading.tgz', archive);
 const files = {};
 async function inventory(directory) {

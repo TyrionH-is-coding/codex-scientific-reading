@@ -25,11 +25,13 @@ sh "<Skill目录>/scripts/workbench.sh" start
 
 `ok=true`、`status=running` 才表示启动成功。不要由 cwd、固定端口或磁盘 PID 推测实例。相同实例重复启动复用原进程。
 
-先探测当前会话实际可用的浏览器 runtime，不要只看有没有名为 browser 的 Skill 入口。skills 目录为空时，受信 Node REPL / in-app browser 仍可能连上内置浏览器并读 DOM。只有探测失败才报告“浏览器能力不可用”；只有入口未暴露时写“未暴露 Skill 入口”。按浏览器工具文档打开 `url + '/__workbench'`，核对产品、instanceId、launchId 与控制脚本相同，然后在同一标签页进入 `url` 并确认 DSH 页面。JSON 身份接口有时不能被内置浏览器当页面打开，使用 HTML 实例页。只有 HTTP 200 不等于完成浏览器验收。未提供内置浏览器工具的宿主可以返回启动 URL 让用户手动打开；后端管理可继续，但必须说明内置浏览器页面尚未核验，不把普通浏览器或 HTTP 检查说成内置浏览器验收。
+先探测当前会话实际可用的浏览器 runtime，不要只看有没有名为 browser 的 Skill 入口。skills 目录为空时，受信 Node REPL / in-app browser 仍可能连上内置浏览器并读 DOM。只有探测失败才报告“浏览器能力不可用”；只有入口未暴露时写“未暴露 Skill 入口”。按浏览器工具文档打开 `url + '/__workbench'`，核对产品、instanceId、launchId 与控制脚本相同，首次使用停留该配置页并按下节引导；已有配置时在同一标签页进入 `url` 并确认 DSH 页面。JSON 身份接口有时不能被内置浏览器当页面打开，使用 HTML 实例页。只有 HTTP 200 不等于完成浏览器验收。未提供内置浏览器工具的宿主可以返回启动 URL 让用户手动打开；后端管理可继续，但必须说明内置浏览器页面尚未核验，不把普通浏览器或 HTTP 检查说成内置浏览器验收。
 
 脚本还支持 `status`、`stop`、`rollback`、`recover`。关闭标签页不必停止宿主；失败时只读取与错误有关的自有日志段。不得按进程名、端口或陈旧 PID 杀进程。
 
 ## 首次使用与配置引导
+
+首次使用先展示 start/status 返回的 entryUrl 配置页，不立即跳过。已有配置可直接进入 DSH。每次重启后重新读取当前 URL，不能复用旧端口。
 
 安装完成或首次打开工作台时，主动说明模型还需要在本实例配置，并给出两个入口：DSH 原生模型 API，或 Codex OAuth。不能因为外层 Codex 已登录，就认定工作台也已接入订阅。用户选择订阅时，在已核验实例的 `url + '/api/codex-oauth/ui'` 打开登录页，说明需要依次点击“使用 ChatGPT 登录”和“打开 OpenAI 授权页”；由本人完成授权。登录成功后，引导在 DSH 选择 `openai-codex` 和账号实际可用模型。已有配置的用户不必重新登录；不要替用户切换计费方式。
 
@@ -58,7 +60,7 @@ DSH 的分类工具有宿主和 Python 范围校验；其子会话继承分类�
 
 ## Excel 管理
 
-总表位于实例根的 `library/library/scientific-reading.xlsx`。按 [references/excel.md](references/excel.md) 使用当前实例自带 Python 刷新；Windows 用 PowerShell，macOS/Linux 用 shell。打开文件使用宿主实际可用的文件展示能力或系统关联软件，macOS/Linux 不宣称自动选中论文行。只有“个人思考、个人理解程度、用户笔记”三列可以回写；先请用户保存关闭，再刷新并检查 JSON 的 `status`。`pending` 时保留原表并说明占用或身份冲突，不删表重建。备份使用完整文献库备份，单独复制 XLSX 不足以换机。
+总表位于实例根的 `library/library/scientific-reading.xlsx`，包含“文献、阅读成果、图表索引”。按 [references/excel.md](references/excel.md) 调用正式同步和个人记录接口。六个黄色个人字段支持回写；用户保存关闭后执行 `excel_sync` 并读实际结果。`pending` 保留原表并报告具体冲突。个人记录以论文身份持久保存，整表排序不改变归属。换机使用完整库备份，单独 XLSX 不足以恢复。
 
 ## PDF 与模型
 

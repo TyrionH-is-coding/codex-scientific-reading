@@ -65,7 +65,7 @@ async function validate(state, instance) {
   if (!response.ok || ['product', 'instanceId', 'launchId', 'pid'].some(key => actual[key] !== state[key])) {
     throw new Error('instance_identity_mismatch');
   }
-  return state;
+  return { ...state, entryUrl: `${state.url}/__workbench` };
 }
 
 export async function status(root) {

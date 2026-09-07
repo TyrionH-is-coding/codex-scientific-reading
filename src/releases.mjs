@@ -8,6 +8,7 @@ import { directoryLinkType } from './platform.mjs';
 import { prepareLocalSocket } from './local-socket.mjs';
 
 const transitionFile = root => path.join(root, 'state', 'release-transition.json');
+const forwardMigration = (previous, candidate) => previous?.dataFormat === 4 && candidate.dataFormat === 5;
 export const maintenancePipe = root => `${control.pipeName(root)}-maintenance`;
 
 async function optionalJson(file) {
@@ -70,7 +71,9 @@ export async function activateRelease(requestedRoot, candidate, { lifecycle = co
   return exclusive(root, async () => {
     if (await optionalJson(transitionFile(root))) throw new Error('release_recovery_required');
     const previous = await optionalJson(path.join(root, 'installation.json'));
-    if (previous && previous.dataFormat !== candidate.dataFormat) throw new Error('incompatible_data_format: migration is required');
+    if (previous && previous.dataFormat !== candidate.dataFormat && !forwardMigration(previous, candidate)) {
+      throw new Error('incompatible_data_format: only the verified 4 to 5 migration is supported');
+    }
     await validateRelease(root, candidate);
     if (previous?.appSha256 === candidate.appSha256) return { status: 'unchanged', release: previous };
     const wasRunning = (await lifecycle.status(root)).status === 'running';
@@ -79,6 +82,9 @@ export async function activateRelease(requestedRoot, candidate, { lifecycle = co
     try {
       await lifecycle.stop(root);
       if (previous) transition.backup = await snapshot(root, previous);
+      // From this point a new engine may have migrated SQLite. Recovery must not
+      // select an older engine or restore a backup over later personal records.
+      transition.candidateSelected = true;
       await writeJson(transitionFile(root), transition);
       await select(root, candidate);
       await lifecycle.start(root, { maintenance: true });
@@ -90,9 +96,12 @@ export async function activateRelease(requestedRoot, candidate, { lifecycle = co
       return { status: previous ? 'upgraded' : 'installed', release: candidate };
     } catch (error) {
       await lifecycle.stop(root);
+      await writeJson(path.join(root, 'state', 'last-release-failure.json'), { ...transition, error: error.message });
+      if (transition.candidateSelected && forwardMigration(previous, candidate)) {
+        throw new Error(`release_recovery_required: ${error.message}`, { cause: error });
+      }
       await select(root, previous);
       if (previous && wasRunning) await lifecycle.start(root, { maintenance: true });
-      await writeJson(path.join(root, 'state', 'last-release-failure.json'), { ...transition, error: error.message });
       await fs.rm(transitionFile(root));
       throw error;
     }
@@ -112,13 +121,21 @@ export async function recoverRelease(requestedRoot, { lifecycle = control } = {}
   return exclusive(root, async () => {
     const transition = await optionalJson(transitionFile(root));
     if (!transition) return { status: 'no_recovery_needed' };
-    if (transition.previous) await validateRelease(root, transition.previous);
+    const migrating = transition.candidateSelected && forwardMigration(transition.previous, transition.candidate);
+    const release = migrating ? transition.candidate : transition.previous;
+    if (release) await validateRelease(root, release);
     await lifecycle.stop(root);
-    await select(root, transition.previous);
-    if (transition.previous && transition.wasRunning) await lifecycle.start(root, { maintenance: true });
+    await select(root, release);
+    if (release && (migrating || transition.wasRunning)) await lifecycle.start(root, { maintenance: true });
+    if (migrating && !transition.wasRunning) await lifecycle.stop(root);
+    if (migrating) {
+      const historyFile = path.join(root, 'state', 'release-history.json');
+      const history = await optionalJson(historyFile) ?? [];
+      await writeJson(historyFile, [...history, { previous: transition.previous, current: release, at: new Date().toISOString() }]);
+    }
     await writeJson(path.join(root, 'state', 'last-release-recovery.json'), transition);
     await fs.rm(transitionFile(root));
-    return { status: 'recovered', release: transition.previous };
+    return { status: 'recovered', release };
   });
 }
 

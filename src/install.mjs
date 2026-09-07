@@ -118,7 +118,7 @@ if (!release) {
   const oauthLink = path.join(profileModules, 'codex-scientific-reading-oauth');
   try { await fs.symlink(oauthPath, oauthLink, directoryLinkType()); }
   catch (error) { if (error.code !== 'EEXIST' || await fs.realpath(oauthLink) !== await fs.realpath(oauthPath)) throw error; }
-  release = { product: instance.product, version: VERSION, appSha256, slot, app, profileModules, profilePackage, dataFormat: 4, node, python,
+  release = { product: instance.product, version: VERSION, appSha256, slot, app, profileModules, profilePackage, dataFormat: 5, node, python,
     dsh: path.join(npmRoot, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
     pins, candidate: pins.channel !== 'release', browserCapability: 'check_in_codex', installedAt: new Date().toISOString() };
   await writeJson(path.join(slot, 'release.json'), release);

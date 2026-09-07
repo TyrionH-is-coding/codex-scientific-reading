@@ -4,3 +4,5 @@ inputs/
 outputs/
 *.log
 runtime/scientific-reading.tgz
+__pycache__/
+*.pyc

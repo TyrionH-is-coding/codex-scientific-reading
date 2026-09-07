@@ -11,7 +11,11 @@
 | bind | `{folderId}` | 稳定 `{folderId,sessionId,active,name}` |
 | ingest | `{metadata:{doi,title,authors,year,journal,pmid,source_url,abstract_en}}` | A 原生入库回执；authors 为字符串数组，year 为整数，未掌握字段可省略 |
 | item | `{paperId}` | A 单篇事实 |
-| list | `{folderId?,query?,page?,pageSize?}` | 全库或指定分类分页 |
+| list | `{folderId?,query?,page?,pageSize?,readingState?,personalRecentDays?,orderBy?}` | 全库或指定分类分页；按人工进度、个人维护时间筛选 |
+| personal_update | `{paperId,fields,expected}` | 六个固定个人字段；expected 与 fields 键相同且匹配刚读取的旧值 |
+| excel_sync | `{}` | success / pending / failed；更新行数、导出行数、时间与冲突明细 |
+| excel_open | `{paperId}` | 打开当前工作簿，返回行号与 selected |
+| environment | `{}` | 本机状态；library 中提供最近 Excel 导出回执 |
 | move | `{paperId,folderId,tags?}` | A 分类操作，confidence 固定为用户显式选择 |
 | submit | `{idempotencyKey,folderId,paperId,runAgent?}` | 稳定 taskId、jobId 和当前状态；runAgent 默认 true |
 | tasks | `{}` | 绑定和所有交接任务，从 A 重新读取状态 |
