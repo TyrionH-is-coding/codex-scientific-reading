@@ -1,5 +1,6 @@
 node_modules/
-inputs/
+inputs/*
+!inputs/scientific-reading.tgz
 .local/
 outputs/
 *.log

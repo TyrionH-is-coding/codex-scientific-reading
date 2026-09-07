@@ -8,6 +8,8 @@
 
 主线正在准备 rc.8：Excel 长期管理支持六项个人记录、检索和冲突保护；设置页改为分组行布局，并补齐模型进程恢复、翻译草稿保留与有限补试。以下管理说明对应新实现；已发布 rc.6 不会因源码更新自动升级。查看 [Excel 验收](docs/excel-v0.1-acceptance.md)、[发布前工程审视](docs/release-engineering-review.md) 和 [macOS 实装报告跟进](docs/macos-first-run-followup.md)。
 
+在 Mac 上验证主线修复，请按[从 main 源码测试](docs/platforms.md#从-main-源码测试)安装。源码随附 SHA 固定的配套引擎包；拉取后仍需运行安装器，才能更新工作台实例。
+
 ## 你会得到什么？
 
 | 能力 | 你怎样使用 | 留下什么 |

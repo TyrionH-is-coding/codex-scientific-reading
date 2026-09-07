@@ -18,6 +18,28 @@ macOS/Linux 可在终端运行 `uname -m`：`arm64` 或 `aarch64` 对应 ARM64�
 
 每个包都包含文献引擎。安装器从官方来源下载固定版本的 Node/Python，核对 SHA256 后安装到自己的目录，不要求预装这两个运行时。
 
+## 从 main 源码测试
+
+当前 `main` 对应 rc.8 开发候选，用于验证新设置页、模型恢复、翻译续接与 Excel 长期管理。它与已发布的 rc.6 安装包分别管理，Mac 实装结果仍需补齐。
+
+Mac/Linux 首次取得源码：
+
+```sh
+git clone https://github.com/TyrionH-is-coding/deep-literature-for-codex.git
+cd deep-literature-for-codex
+```
+
+已有源码仓库时，在该仓库目录运行 `git pull --ff-only origin main`。若本地也有修改或提交，先保留并整合自己的工作。
+
+源码已包含 `inputs/scientific-reading.tgz`，安装器会核对它与 `runtime/pins.json` 中的 SHA256。进入源码根目录执行：
+
+```sh
+sh ./install.sh --plugin-archive ./inputs/scientific-reading.tgz --root "$HOME/CodexScientificReading" --install-skill
+sh "$HOME/CodexScientificReading/workbench.sh" start
+```
+
+已有实例时，将 `--root` 指向原来的安装根；单独试装可使用新的空目录。仅拉取源码不会升级已安装的实例。固定引擎包校验失败时停止安装，不能改成使用不匹配的旧包。
+
 ## Windows
 
 按 [README 的 Windows 安装步骤](../README.md#也可以手动安装) 下载、核对 SHA256、解压后执行：
