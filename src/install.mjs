@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { initializeRoot, isolatedEnvironment, prerequisitePaths, readJson, writeJson, verifyFile, installSkill, VERSION } from './core.mjs';
+import { initializeRoot, isolatedEnvironment, prerequisitePaths, readJson, writeJson, verifyFile, installSkill, VERSION, SKILL_NAME } from './core.mjs';
 import { activateRelease, recoverRelease } from './releases.mjs';
 import { restoreNewLibrary } from './library-transfer.mjs';
 import { selectPlatformPins, venvPython, npmCli, directoryLinkType } from './platform.mjs';
@@ -127,6 +127,6 @@ const selected = await activateRelease(root, release);
 for (const file of ['workbench.ps1', 'uninstall.ps1', 'workbench.sh', 'uninstall.sh']) await fs.copyFile(path.join(source, file), path.join(root, file));
 await fs.copyFile(path.join(source, 'src', 'launcher.mjs'), path.join(root, 'launcher.mjs'));
 await fs.writeFile(path.join(root, '.workbench-node'), node + '\n', { mode: 0o600 });
-const skill = skillsRoot ? await installSkill(path.join(app, 'skills', 'codex-scientific-reading'), path.resolve(skillsRoot), root) : null;
+const skill = skillsRoot ? await installSkill(path.join(app, 'skills', SKILL_NAME), path.resolve(skillsRoot), root) : null;
 console.log(JSON.stringify({ ok: true, root, instanceId: instance.instanceId, version: VERSION,
   candidate: release.candidate, installation: selected.status, skill, migration, start: { node, cli: path.join(app, 'src', 'cli.mjs'), args: ['start', root] } }, null, 2));

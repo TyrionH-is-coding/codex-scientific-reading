@@ -21,7 +21,7 @@ async function skillFixture(t) {
   const skills = path.join(temporary, 'skills');
   const candidate = async id => {
     const slot = path.join(root, 'releases', id.repeat(16));
-    const source = path.join(slot, 'app', 'skills', 'codex-scientific-reading');
+    const source = path.join(slot, 'app', 'skills', 'deep-literature-for-codex');
     await fs.mkdir(source, { recursive: true });
     await fs.mkdir(path.join(slot, 'profile-modules'));
     await fs.writeFile(path.join(source, 'SKILL.md'), `packaged skill ${id}`);
@@ -35,9 +35,72 @@ async function skillFixture(t) {
     stop: async () => ({ status: 'stopped' }),
     start: async () => ({ status: 'running' }),
   };
-  return { root, skills, candidate, lifecycle, target: path.join(skills, 'codex-scientific-reading'),
+  return { root, skills, candidate, lifecycle, target: path.join(skills, 'deep-literature-for-codex'),
     receipt: path.join(root, 'state', 'installed-skill.json') };
 }
+
+async function legacySkill(f, managed = true) {
+  const target = path.join(f.skills, 'codex-scientific-reading');
+  await fs.mkdir(target, { recursive: true });
+  await fs.writeFile(path.join(target, 'SKILL.md'), 'old managed skill');
+  await writeJson(path.join(target, 'installation.json'), { product: 'codex-scientific-reading', root: f.root });
+  const files = {};
+  for (const name of await fs.readdir(target)) files[name] = createHash('sha256').update(await fs.readFile(path.join(target, name))).digest('hex');
+  if (managed) await writeJson(f.receipt, { target, files });
+  return target;
+}
+
+test('改名后迁移未修改的旧 Skill，保留同一实例与安装根', async t => {
+  const f = await skillFixture(t);
+  const previous = await legacySkill(f);
+  const marker = await fs.readFile(path.join(f.root, '.workbench.json'));
+  const candidate = await f.candidate('a');
+  const result = await installSkill(candidate.source, f.skills, f.root);
+  assert.equal(result.path, f.target);
+  assert.equal(result.legacySkill.status, 'removed');
+  await assert.rejects(fs.access(previous), { code: 'ENOENT' });
+  assert.equal((await readJson(path.join(f.target, 'installation.json'))).root, f.root);
+  assert.deepEqual(await fs.readFile(path.join(f.root, '.workbench.json')), marker);
+  assert.equal((await readJson(f.receipt)).target, f.target);
+});
+
+test('改名保留定制或非本实例所有的旧 Skill', async t => {
+  for (const managed of [true, false]) {
+    const f = await skillFixture(t);
+    const previous = await legacySkill(f, managed);
+    await fs.writeFile(path.join(previous, 'SKILL.md'), '用户定制内容');
+    const result = await installSkill((await f.candidate('a')).source, f.skills, f.root);
+    assert.equal(result.path, f.target);
+    if (managed) assert.equal(result.legacySkill.status, 'retained_custom_changes');
+    assert.equal(await fs.readFile(path.join(previous, 'SKILL.md'), 'utf8'), '用户定制内容');
+    assert.equal((await readJson(f.receipt)).target, f.target);
+  }
+});
+
+test('新名称被定制 Skill 占用时，不删除旧入口或改写其收据', async t => {
+  const f = await skillFixture(t);
+  const previous = await legacySkill(f);
+  const before = await fs.readFile(f.receipt);
+  await fs.mkdir(f.target);
+  await fs.writeFile(path.join(f.target, 'SKILL.md'), 'another custom skill');
+  const result = await installSkill((await f.candidate('a')).source, f.skills, f.root);
+  assert.equal(result.status, 'retained_custom_changes');
+  assert.equal(await fs.readFile(path.join(previous, 'SKILL.md'), 'utf8'), 'old managed skill');
+  assert.deepEqual(await fs.readFile(f.receipt), before);
+});
+
+test('新版源码的 install-skill 可为旧安装单独更新入口', async t => {
+  const f = await skillFixture(t);
+  const previous = await legacySkill(f);
+  await writeJson(path.join(f.root, 'installation.json'), { app: path.join(f.root, 'legacy-app') });
+  const result = spawnSync(process.execPath, ['src/cli.mjs', 'install-skill', f.root, f.skills], {
+    encoding: 'utf8', windowsHide: true,
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(JSON.parse(result.stdout).path, f.target);
+  assert.match(await fs.readFile(path.join(f.target, 'SKILL.md'), 'utf8'), /^name: deep-literature-for-codex$/m);
+  await assert.rejects(fs.access(previous), { code: 'ENOENT' });
+});
 
 test('发布已升级后，定制 Skill 冲突作为保留结果返回，不误报安装失败', async t => {
   const f = await skillFixture(t);

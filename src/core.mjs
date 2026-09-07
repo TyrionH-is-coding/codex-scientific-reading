@@ -5,7 +5,8 @@ import { runtimePaths } from './platform.mjs';
 
 export const PRODUCT = 'codex-scientific-reading';
 export const DISPLAY_NAME = 'Deep Literature for Codex';
-export const VERSION = '0.1.0-rc.4';
+export const SKILL_NAME = 'deep-literature-for-codex';
+export const VERSION = '0.1.0-rc.5';
 
 export async function readJson(file) {
   return JSON.parse((await fs.readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
@@ -100,18 +101,24 @@ const fingerprints = files => Object.fromEntries(Object.entries(files).map(([fil
 const sameFiles = (a, b) => Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([file, sha]) => b[file] === sha);
 
 export async function installSkill(source, skillsRoot, root) {
-  const target = path.join(skillsRoot, PRODUCT);
+  const target = path.join(skillsRoot, SKILL_NAME);
   const expected = await filesBelow(source);
   expected['installation.json'] = Buffer.from(JSON.stringify({ product: PRODUCT, root }, null, 2) + '\n');
   expected['location.txt'] = Buffer.from(root + '\n');
   const receipt = path.join(root, 'state', 'installed-skill.json');
-  const remember = () => writeJson(receipt, { target, files: fingerprints(expected) });
+  let legacySkill;
+  const remember = async () => {
+    let previous;
+    try { previous = await readJson(receipt); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (previous?.target === path.join(skillsRoot, PRODUCT)) legacySkill = await removeManagedSkill(root);
+    await writeJson(receipt, { target, files: fingerprints(expected) });
+  };
   let replace = false;
   try {
     const present = await filesBelow(target);
     if (sameFiles(fingerprints(present), fingerprints(expected))) {
       await remember();
-      return { path: target, reused: true };
+      return { path: target, reused: true, ...(legacySkill ? { legacySkill } : {}) };
     }
     let previous;
     try { previous = await readJson(receipt); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -121,7 +128,7 @@ export async function installSkill(source, skillsRoot, root) {
     replace = true;
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await fs.mkdir(skillsRoot, { recursive: true });
-  const staging = path.join(skillsRoot, `${PRODUCT}.staging-${randomUUID()}`);
+  const staging = path.join(skillsRoot, `${SKILL_NAME}.staging-${randomUUID()}`);
   await fs.mkdir(staging);
   let backup;
   try {
@@ -132,7 +139,7 @@ export async function installSkill(source, skillsRoot, root) {
     if (replace) {
       backup = path.join(root, 'state', 'skill-backups', randomUUID());
       await fs.cp(target, backup, { recursive: true });
-      if (path.dirname(target) !== path.resolve(skillsRoot) || path.basename(target) !== PRODUCT) throw new Error('invalid_skill_target');
+      if (path.dirname(target) !== path.resolve(skillsRoot) || path.basename(target) !== SKILL_NAME) throw new Error('invalid_skill_target');
       await fs.rm(target, { recursive: true });
     }
     await fs.rename(staging, target);
@@ -147,7 +154,7 @@ export async function installSkill(source, skillsRoot, root) {
     if (path.dirname(staging) !== path.resolve(skillsRoot)) throw new Error('invalid_skill_staging');
     await fs.rm(staging, { recursive: true, force: true });
   }
-  return { path: target, reused: false, updated: replace };
+  return { path: target, reused: false, updated: replace, ...(legacySkill ? { legacySkill } : {}) };
 }
 
 export async function removeManagedSkill(root) {
@@ -155,7 +162,7 @@ export async function removeManagedSkill(root) {
   try { receipt = await readJson(path.join(root, 'state', 'installed-skill.json')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; return { status: 'not_installed' }; }
   const target = path.resolve(receipt.target);
-  if (path.basename(target) !== PRODUCT || path.dirname(target) === target) throw new Error('invalid_skill_target');
+  if (![PRODUCT, SKILL_NAME].includes(path.basename(target)) || path.dirname(target) === target) throw new Error('invalid_skill_target');
   let current;
   try { current = await filesBelow(target); }
   catch (error) { if (error.code !== 'ENOENT') throw error; return { status: 'not_found', path: target }; }

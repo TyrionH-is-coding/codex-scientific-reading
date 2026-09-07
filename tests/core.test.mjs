@@ -66,7 +66,7 @@ test('安装 Skill 可重复执行，但不能覆盖用户已有的同名内容'
   await fs.writeFile(path.join(source, 'SKILL.md'), 'fixture skill');
   await installSkill(source, target, root);
   await installSkill(source, target, root);
-  const installed = path.join(target, 'codex-scientific-reading', 'SKILL.md');
+  const installed = path.join(target, 'deep-literature-for-codex', 'SKILL.md');
   await fs.writeFile(installed, 'user customized');
   assert.deepEqual(await installSkill(source, target, root), {
     status: 'retained_custom_changes', reason: 'skill_conflict', path: path.dirname(installed),
@@ -83,6 +83,6 @@ test('自有且未修改的 Skill 可升级和卸载', async t => {
   await installSkill(source, skills, root);
   await fs.writeFile(path.join(source, 'SKILL.md'), 'v2');
   assert.equal((await installSkill(source, skills, root)).updated, true);
-  assert.equal(await fs.readFile(path.join(skills, 'codex-scientific-reading', 'SKILL.md'), 'utf8'), 'v2');
+  assert.equal(await fs.readFile(path.join(skills, 'deep-literature-for-codex', 'SKILL.md'), 'utf8'), 'v2');
   assert.equal((await removeManagedSkill(root)).status, 'removed');
 });
