@@ -13,6 +13,14 @@ const root = path.join(temporary, '文献 workbench');
 const output = path.resolve(process.argv[2] || `outputs/platform-${process.platform}-${process.arch}.json`);
 await fs.mkdir(path.dirname(output), { recursive: true });
 const report = { platform: process.platform, arch: process.arch, startedAt: new Date().toISOString(), root, checks: [] };
+try {
+  const manifest = await readJson(path.join(source, 'BUILD-MANIFEST.json'));
+  report.source = 'release-archive';
+  report.sourceCommit = manifest.sourceCommit;
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+  report.source = 'checkout';
+}
 const check = (name, condition) => { assert.ok(condition, name); report.checks.push(name); };
 let sequence = 0;
 async function run(command, args, input = '') {
