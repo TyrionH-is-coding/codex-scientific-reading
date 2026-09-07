@@ -37,7 +37,7 @@
 
 ### 推荐：让 Codex 帮你安装
 
-在 **Codex 桌面端的新对话**中复制发送：
+在 **Codex 的新对话**中复制发送：
 
 ```text
 请帮我安装 Deep Literature for Codex：
@@ -45,7 +45,8 @@ https://github.com/TyrionH-is-coding/deep-literature-for-codex
 
 请按我的操作系统和架构选择 rc.4 Release 安装包，核对 SHA256，
 解压后运行安装器并安装 Skill。
-完成后启动工作台，在内置浏览器打开并核对实例。
+完成后启动并核对实例，有内置浏览器工具时打开工作台；
+没有该工具时给出浏览器访问链接。
 需要账号登录时，由我本人完成。
 ```
 
@@ -69,7 +70,7 @@ Get-FileHash .\deep-literature-for-codex-0.1.0-rc.4-win-x64.zip -Algorithm SHA25
 powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific-reading.tgz -InstallSkill
 ```
 
-默认安装到 `%USERPROFILE%\CodexScientificReading`。等待终端返回安装结果；一次实测约 3 分 36 秒，网络和机器速度会影响耗时。
+默认安装到 `%USERPROFILE%\CodexScientificReading`。等待终端返回安装结果；网络和机器速度会影响耗时，各系统的实测记录见 [安装耗时与验收](docs/acceptance.md)。
 
 5. 安装完成后，在 Codex 对话中发送：
 

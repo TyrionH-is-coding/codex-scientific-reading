@@ -109,4 +109,4 @@ sh ./install.sh --plugin-archive ./inputs/scientific-reading.tgz --root "$HOME/D
 sh "$HOME/CodexScientificReading/uninstall.sh"
 ```
 
-跨平台验证分为引擎/插件测试与真实安装检查。安装检查在各系统的独立目录执行安装、启动、身份核验、系统凭据保存读取删除、Excel 回写、备份、重启、重装与卸载，并记录耗时。它不调用用户的模型或 MinerU 额度，也不代替 Codex 桌面交互与译文质量验收。
+跨平台验证分为引擎/插件测试与真实安装检查。安装检查从发行压缩包重新解压，在各系统的独立目录执行安装、启动、身份核验、系统凭据保存读取删除、Excel 回写、备份、重启、重装与卸载，并记录耗时。结果见 [验收记录](acceptance.md)。它不调用用户的模型或 MinerU 额度，也不代替 Codex 桌面交互与译文质量验收。

@@ -4,8 +4,10 @@
 - 各平台使用固定版本和 SHA256 校验的私有 Node/Python 与 Python wheel。
 - MinerU Key 使用 Windows DPAPI、macOS Keychain 或 Linux Secret Service，按实例隔离。
 - Excel 总表在 macOS/Linux 使用系统关联软件打开；没有自动选行时准确提示手动查找。
-- 修复 Unix 已退出进程误判为运行中、长路径控制 socket，以及 Windows 中文安装目录解压问题。
+- 修复 Unix 已退出进程误判为运行中、长路径控制 socket，以及 Windows 中文安装目录解压和长路径卸载问题。
 - 增加五个平台的工作台、OAuth、引擎与插件 CI，并提供记录耗时的真实安装检查。真实模型和 MinerU 调用仍按账号单独验收。
+
+按平台选择安装包，见 [Windows / macOS / Linux 安装指南](platforms.md)。完整检查、安装/启动耗时与问题记录见 [rc.4 验收](acceptance.md)。
 
 # Deep Literature for Codex 0.1.0-rc.3
 
