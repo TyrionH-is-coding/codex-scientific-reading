@@ -10,7 +10,7 @@ case "$(uname -s)" in Darwin) platform=darwin;; Linux) platform=linux;; *) print
 case "$(uname -m)" in arm64|aarch64) arch=arm64;; x86_64|amd64) arch=x64;; *) printf '%s\n' 'Only x64 and arm64 are supported.' >&2; exit 1;; esac
 runtime_key=$platform-$arch
 node_url=$(awk -F '\t' -v key="$runtime_key" '$1 == key {print $2}' "$source_dir/runtime/posix-node.tsv")
-node_sha=$(awk -F '\t' -v key="$runtime_key" '$1 == key {print $3}' "$source_dir/runtime/posix-node.tsv")
+node_sha=$(awk -F '\t' -v key="$runtime_key" '$1 == key {sub(/\r$/, "", $3); print $3}' "$source_dir/runtime/posix-node.tsv")
 [ -n "$node_url" ] && [ "${#node_sha}" -eq 64 ] || { printf '%s\n' 'Runtime pins missing.' >&2; exit 1; }
 for tool in curl tar awk; do command -v "$tool" >/dev/null || { printf 'Required tool missing: %s\n' "$tool" >&2; exit 1; }; done
 bootstrap_dir=$(mktemp -d "${TMPDIR:-/tmp}/deep-literature-install.XXXXXXXX")

@@ -75,8 +75,13 @@ try {
     $pythonArchive = Join-Path $downloads ('python-' + $pins.python.version + '-' + $pins.python.build + '.tar.gz')
     Receive-PinnedFile $pins.python $pythonArchive
     New-Item -ItemType Directory -Path $pythonTarget -Force | Out-Null
-    & (Join-Path $env:SYSTEMROOT 'System32\tar.exe') -xzf $pythonArchive -C $pythonTarget
-    if ($LASTEXITCODE -ne 0) { throw 'python_extract_failed' }
+    # Windows tar may reinterpret non-ASCII absolute argv paths through the
+    # active code page. Resolve the Unicode root as cwd and pass ASCII relatives.
+    Push-Location -LiteralPath $runtime
+    try {
+      & (Join-Path $env:SYSTEMROOT 'System32\tar.exe') -xzf ('downloads\' + [System.IO.Path]::GetFileName($pythonArchive)) -C ('python\' + $pins.python.version + '-' + $pins.python.build)
+      if ($LASTEXITCODE -ne 0) { throw 'python_extract_failed' }
+    } finally { Pop-Location }
   }
   $arguments = @((Join-Path $PSScriptRoot 'src\install.mjs'), $Root, $archive)
   if ($InstallSkill) {

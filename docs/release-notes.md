@@ -1,3 +1,12 @@
+# rc.4：macOS / Linux 适配
+
+- 增加 macOS Intel/Apple Silicon、Linux x64/ARM64 的安装、启动、恢复、回退与卸载入口。
+- 各平台使用固定版本和 SHA256 校验的私有 Node/Python 与 Python wheel。
+- MinerU Key 使用 Windows DPAPI、macOS Keychain 或 Linux Secret Service，按实例隔离。
+- Excel 总表在 macOS/Linux 使用系统关联软件打开；没有自动选行时准确提示手动查找。
+- 修复 Unix 已退出进程误判为运行中、长路径控制 socket，以及 Windows 中文安装目录解压问题。
+- 增加五个平台的工作台、OAuth、引擎与插件 CI，并提供记录耗时的真实安装检查。真实模型和 MinerU 调用仍按账号单独验收。
+
 # Deep Literature for Codex 0.1.0-rc.3
 
 Windows x64 公测候选。本版统一更名为 Deep Literature for Codex，更新仓库地址、安装包名、实例页面、订阅页面和 Skill 展示说明；文献引擎与 rc.2 相同，旧实例和文库兼容。修复新用户安装与真实文献精读流程的阻断；保留 rc.1 历史附件。

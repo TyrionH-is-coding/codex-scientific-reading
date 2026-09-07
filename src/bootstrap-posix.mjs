@@ -55,7 +55,7 @@ try {
   async function exists(file) { try { await fs.access(file); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; } }
   if (!await exists(paths.node)) {
     await fs.mkdir(path.dirname(paths.nodeRoot), { recursive: true });
-    await fs.cp(path.resolve(options['bootstrap-node']), paths.nodeRoot, { recursive: true, force: false, errorOnExist: true });
+    await fs.cp(path.resolve(options['bootstrap-node']), paths.nodeRoot, { recursive: true, force: false, errorOnExist: true, verbatimSymlinks: true });
   }
   if (!await exists(paths.pythonBase)) {
     const downloads = path.join(root, 'runtime', 'downloads');

@@ -89,7 +89,7 @@ await writeJson(path.join(destination, 'PACKAGE-VERIFY.json'), { zipSha256: zipS
 const manifest = { schema: 1, channel: pins.channel, version: VERSION, createdAt: new Date().toISOString(),
   artifacts: [{ file: path.basename(zip), sha256: zipSha }, { file: aName, sha256: pins.plugin.sha256 }],
   sourceCommit, pluginSourceCommit: pins.plugin.sourceCommit, sourceSnapshot: 'BUILD-MANIFEST.json inside the B archive',
-  compatibility: { platform: pins.platform, windows: 'x64, PowerShell 5.1+', macos: '12+, x64 / arm64', linux: 'glibc 2.35+, x64 / arm64', node: pins.node.version, python: pins.python.version, dsh: pins.dsh, a: pins.plugin.version, codexCli: '0.146.0' },
+  compatibility: { platform: pins.platform, windows: 'x64, PowerShell 5.1+', macos: '14+, x64 / arm64', linux: 'glibc 2.35+, x64 / arm64', node: pins.node.version, python: pins.python.version, dsh: pins.dsh, a: pins.plugin.version, codexCli: '0.146.0' },
   validation: 'See the accompanying acceptance record. Real account authorization and scientific content acceptance must be stated separately.' };
 await writeJson(path.join(destination, 'RELEASE-MANIFEST.json'), manifest);
 const manifestSha = createHash('sha256').update(await fs.readFile(path.join(destination, 'RELEASE-MANIFEST.json'))).digest('hex');
