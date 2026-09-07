@@ -19,25 +19,41 @@ if (Test-Path -LiteralPath $installationFile) {
 }
 $retired = Get-Content -LiteralPath (Join-Path $Root 'state\uninstalled.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($retired.status -ne 'uninstalled' -or $retired.root -ne $Root -or (Test-Path -LiteralPath $installationFile)) { throw 'uninstall_not_retired' }
+function Get-ExtendedPath([string]$Absolute) {
+  if ($Absolute.StartsWith('\\')) { return '\\?\UNC\' + $Absolute.Substring(2) }
+  return '\\?\' + $Absolute
+}
 function Remove-ManagedTree([string]$Target, [string]$Boundary) {
   $absolute = [System.IO.Path]::GetFullPath($Target)
   if ($absolute -ne $Boundary -and -not $absolute.StartsWith($Boundary + '\', [System.StringComparison]::OrdinalIgnoreCase)) { throw 'uninstall_path_escaped' }
-  $item = Get-Item -LiteralPath $absolute -Force
-  if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-    if ($item.PSIsContainer) { [System.IO.Directory]::Delete($absolute) }
-    else { [System.IO.File]::Delete($absolute) }
+  # PowerShell 5.1's file provider fails on long dependency paths. Use extended
+  # paths through .NET, and delete junctions themselves without visiting targets.
+  $native = Get-ExtendedPath $absolute
+  $attributes = [System.IO.File]::GetAttributes($native)
+  $isDirectory = $attributes -band [System.IO.FileAttributes]::Directory
+  if ($attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+    if ($isDirectory) { [System.IO.Directory]::Delete($native) }
+    else { [System.IO.File]::Delete($native) }
     return
   }
-  if ($item.PSIsContainer) {
-    foreach ($child in @(Get-ChildItem -LiteralPath $absolute -Force)) { Remove-ManagedTree $child.FullName $Boundary }
-    [System.IO.Directory]::Delete($absolute)
-  } else { Remove-Item -LiteralPath $absolute -Force }
+  if ($isDirectory) {
+    foreach ($child in [System.IO.Directory]::EnumerateFileSystemEntries($native)) {
+      Remove-ManagedTree ([System.IO.Path]::Combine($absolute, [System.IO.Path]::GetFileName($child))) $Boundary
+    }
+    [System.IO.Directory]::Delete($native)
+  } else {
+    if ($attributes -band [System.IO.FileAttributes]::ReadOnly) {
+      [System.IO.File]::SetAttributes($native, ($attributes -band (-bnot [System.IO.FileAttributes]::ReadOnly)))
+    }
+    [System.IO.File]::Delete($native)
+  }
 }
 foreach ($name in @('releases','runtime')) {
   $target = [System.IO.Path]::GetFullPath((Join-Path $Root $name))
   if ([System.IO.Path]::GetDirectoryName($target) -ne $Root -or $retired.removePaths -notcontains $target) { throw 'invalid_uninstall_target' }
-  if (Test-Path -LiteralPath $target) {
-    if ((Get-Item -LiteralPath $target -Force).Attributes -band [System.IO.FileAttributes]::ReparsePoint) { throw 'uninstall_target_is_link' }
+  $nativeTarget = Get-ExtendedPath $target
+  if ([System.IO.Directory]::Exists($nativeTarget)) {
+    if ([System.IO.File]::GetAttributes($nativeTarget) -band [System.IO.FileAttributes]::ReparsePoint) { throw 'uninstall_target_is_link' }
     Remove-ManagedTree $target $target
   }
 }

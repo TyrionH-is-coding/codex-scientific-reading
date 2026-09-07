@@ -124,3 +124,30 @@ test('发行源文件被破坏时在引导安装前拒绝，安装根保持不�
   assert.match(result.stderr + result.stdout, /source_checksum_mismatch/);
   await assert.rejects(fs.access(root), { code: 'ENOENT' });
 });
+
+test('Windows 卸载处理超长路径且不遍历文库 junction', { skip: process.platform !== 'win32' }, async t => {
+  const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-uninstall-'));
+  t.after(() => fs.rm(temporary, { recursive: true, force: true }));
+  const { root } = await initializeRoot(path.join(temporary, '文献 workbench'));
+  const releases = path.join(root, 'releases'), runtime = path.join(root, 'runtime');
+  const library = path.join(root, 'library');
+  await fs.mkdir(library, { recursive: true });
+  await fs.writeFile(path.join(library, 'preserved.txt'), 'personal notes');
+  const deep = path.join(releases, 'dependency'.repeat(10), 'module'.repeat(15));
+  await fs.mkdir(deep, { recursive: true });
+  const longFile = path.join(deep, 'long-dependency-file.d.ts');
+  assert.ok(longFile.length > 260);
+  await fs.writeFile(longFile, 'installed dependency');
+  await fs.chmod(longFile, 0o444);
+  await fs.symlink(library, path.join(releases, 'library-link'), 'junction');
+  await writeJson(path.join(root, 'state', 'uninstalled.json'), {
+    status: 'uninstalled', root, removePaths: [releases, runtime], skill: { status: 'removed' },
+  });
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-File', 'uninstall.ps1', '-Root', root], {
+    encoding: 'utf8', windowsHide: true, timeout: 30000,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  await assert.rejects(fs.access(releases), { code: 'ENOENT' });
+  await assert.rejects(fs.access(runtime), { code: 'ENOENT' });
+  assert.equal(await fs.readFile(path.join(library, 'preserved.txt'), 'utf8'), 'personal notes');
+});
