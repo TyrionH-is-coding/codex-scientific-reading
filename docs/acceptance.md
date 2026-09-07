@@ -1,5 +1,13 @@
 # Deep Literature for Codex 验收记录
 
+## rc.5 兼容性修复验收（2026-09-07）
+
+本轮新增 OAuth 原生程序启动、安装后配置提示、Skill 改名迁移，以及 Excel/LibreOffice 占用时保留原表。Windows 本地工作台测试 51 passed / 1 skipped、OAuth 33 passed；引擎 414 passed / 3 skipped，完整 npm test 通过。
+
+五平台 CI 与实际安装验收按当前提交重新运行。最终结果见本版本 Release 附件中的 `platform-*.json`、`RELEASE-MANIFEST-*.json` 和 SHA256 清单；每个平台附件均取自通过安装验收的同一份压缩包。旧 rc.4 数字保留在下方，不作为 rc.5 放行证据。
+
+自动化检查包括：安装、实际 Skill 启停、OAuth 未登录状态、原生凭据保存读取删除、Excel 三列中文记录回写、占用标记保护、完整备份、重启重装保留和卸载保留文献。它们不代替本人浏览器 OAuth 授权、macOS/Linux Excel/LibreOffice GUI 编辑与实际模型/MinerU 调用。模型待测项见 [测试记录](model-tests.md)。
+
 ## rc.4 跨平台发行包验收（2026-09-07）
 
 代码基线：工作台 B `47b2202a44a34adfeb04d15367ea284f679a2b72`；文献引擎 A `5a1566267fff0b5ef65564ae794ac85f61d7b88c`。最终发行在此基础上补充文档；运行代码不再变化。发行包的准确源码提交、每个文件及压缩包 SHA256 见发行附件 `RELEASE-MANIFEST.json`、`PACKAGE-VERIFY.json` 和包内 `BUILD-MANIFEST.json`。

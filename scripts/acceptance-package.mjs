@@ -29,3 +29,9 @@ await writeJson(path.join(source, 'outputs', `platform-package-${process.platfor
 await run(path.join(verification.extractedRoot, 'scripts', 'acceptance-platform.mjs'), [
   path.join(source, 'outputs', `platform-${process.platform}-${process.arch}.json`),
 ]);
+// Publish only the exact archive whose extracted contents passed installation.
+const delivery = path.join(source, 'outputs', `platform-delivery-${process.platform}-${process.arch}`);
+await fs.mkdir(delivery, { recursive: true });
+for (const file of [...release.artifacts.map(item => item.file), 'RELEASE-MANIFEST.json', 'PACKAGE-VERIFY.json', 'SHA256SUMS.txt']) {
+  await fs.copyFile(path.join(destination, file), path.join(delivery, file));
+}
