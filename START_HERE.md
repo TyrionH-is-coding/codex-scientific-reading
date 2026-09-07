@@ -2,7 +2,7 @@
 
 首次使用请阅读 [README 使用指南](README.md)，按顺序完成：
 
-1. 下载并解压 Windows 安装包，运行安装器。
+1. 按 [平台指南](docs/platforms.md) 下载对应安装包，运行 Windows 或 macOS/Linux 安装器。
 2. 在 Codex 对话中打开工作台。
 3. 按 [MinerU API Key 教程](docs/mineru-api-key.md) 获取并保存 Token，再配置工作台自己的模型。
 4. 发送第一篇论文，由内置 scansci-pdf 尝试获取 OA 全文；缺 PDF 时补入原任务。

@@ -1,6 +1,6 @@
 # 安装、升级、回退与迁移
 
-首版面向 Windows x64。安装器使用发行包中固定的版本和 SHA；不跟随 `latest`，不修改系统 PATH 或用户原 DSH。
+rc.4 增加 macOS/Linux 安装支持；本页保留 Windows 命令，其他系统使用 [平台指南](platforms.md)。安装器使用发行包中固定的版本和 SHA；不跟随 `latest`，不修改系统 PATH 或用户原 DSH。
 
 ## 安装
 

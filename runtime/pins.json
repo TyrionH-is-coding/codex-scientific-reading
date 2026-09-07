@@ -20,5 +20,47 @@
     "sha256": "ce2018eecb698f6b77442d29d299516fb402c6435b14c51ee563f21a6d1f4067",
     "source": "A rc.2 candidate built from codex/remaining-fixes-acceptance; bundled with this release",
     "sourceCommit": "f95ac4062be0629d4cc814463350cc855db53e8a"
+  },
+  "platforms": {
+    "darwin-arm64": {
+      "node": {
+        "url": "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
+        "sha256": "db4b275b83736df67533529a18cc55de2549a8329ace6c7bcc68f8d22d3c9000"
+      },
+      "python": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16%2B20260901-aarch64-apple-darwin-install_only_stripped.tar.gz",
+        "sha256": "768f05cf200273bbdda9a5955a5a6892a4b22f2a0b1e4b0a9160f5c7fce86816"
+      }
+    },
+    "darwin-x64": {
+      "node": {
+        "url": "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-x64.tar.gz",
+        "sha256": "12a6abb9c2902cf48a21120da13f87fde1ed1b71a13330712949e8db818708ba"
+      },
+      "python": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16%2B20260901-x86_64-apple-darwin-install_only_stripped.tar.gz",
+        "sha256": "908b381433f78b832c8d64960ced0f85871893cc8779f413f963e0c9e293c258"
+      }
+    },
+    "linux-arm64": {
+      "node": {
+        "url": "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-arm64.tar.gz",
+        "sha256": "b2f3a96f31486bfc365192ad65ced14833ad2a3c2e1bcefec4846902f264fa28"
+      },
+      "python": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16%2B20260901-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
+        "sha256": "f9308ed57184fae73941c712ed847be420ce36d31ba73ce53f0508a1ee752f68"
+      }
+    },
+    "linux-x64": {
+      "node": {
+        "url": "https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-x64.tar.gz",
+        "sha256": "978978a635eef872fa68beae09f0aad0bbbae6757e444da80b570964a97e62a3"
+      },
+      "python": {
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.11.16%2B20260901-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+        "sha256": "64427febea27864d136db46c8efe968eb6fa5ca2813ce1dca4bb95aec31cb2e4"
+      }
+    }
   }
 }

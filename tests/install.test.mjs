@@ -89,10 +89,12 @@ test('错误插件校验在创建安装根或发起下载前失败', async t => 
   const bad = path.join(temporary, 'bad.tgz');
   const root = path.join(temporary, 'new-install');
   await fs.writeFile(bad, 'not a release');
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-File', 'install.ps1',
-    '-Root', root, '-PluginArchive', bad], { encoding: 'utf8', windowsHide: true });
+  const result = process.platform === 'win32'
+    ? spawnSync('powershell.exe', ['-NoProfile', '-File', 'install.ps1', '-Root', root, '-PluginArchive', bad], { encoding: 'utf8', windowsHide: true })
+    : spawnSync(process.execPath, ['src/bootstrap-posix.mjs', '--root', root, '--plugin-archive', bad,
+      '--bootstrap-node', path.dirname(process.execPath)], { encoding: 'utf8' });
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr + result.stdout, /plugin_checksum_mismatch/);
+  assert.match(result.stderr + result.stdout, /(?:plugin_)?checksum_mismatch/);
   await assert.rejects(fs.access(root), { code: 'ENOENT' });
 });
 
@@ -102,14 +104,22 @@ test('发行源文件被破坏时在引导安装前拒绝，安装根保持不�
   await fs.mkdir(path.join(temporary, 'runtime'));
   await fs.copyFile('install.ps1', path.join(temporary, 'install.ps1'));
   await fs.copyFile('runtime/pins.json', path.join(temporary, 'runtime/pins.json'));
+  if (process.platform !== 'win32') await fs.cp('src', path.join(temporary, 'src'), { recursive: true });
   const source = path.join(temporary, 'verified.txt');
   await fs.writeFile(source, Buffer.alloc(5));
   await fs.writeFile(path.join(temporary, 'BUILD-MANIFEST.json'), JSON.stringify({ files: {
     'verified.txt': createHash('sha256').update('valid').digest('hex'),
   } }));
   const root = path.join(temporary, 'new-install');
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-File', path.join(temporary, 'install.ps1'),
-    '-Root', root, '-PluginArchive', source], { encoding: 'utf8', windowsHide: true });
+  // Use a matching archive pin so both installers reach source verification.
+  const pins = await readJson(path.join(temporary, 'runtime/pins.json'));
+  pins.plugin.sha256 = createHash('sha256').update(await fs.readFile(source)).digest('hex');
+  await writeJson(path.join(temporary, 'runtime/pins.json'), pins);
+  const result = process.platform === 'win32'
+    ? spawnSync('powershell.exe', ['-NoProfile', '-File', path.join(temporary, 'install.ps1'),
+      '-Root', root, '-PluginArchive', source], { encoding: 'utf8', windowsHide: true })
+    : spawnSync(process.execPath, [path.join(temporary, 'src/bootstrap-posix.mjs'), '--root', root,
+      '--plugin-archive', source, '--bootstrap-node', path.dirname(process.execPath)], { encoding: 'utf8' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr + result.stdout, /source_checksum_mismatch/);
   await assert.rejects(fs.access(root), { code: 'ENOENT' });

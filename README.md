@@ -4,7 +4,7 @@
 
 给它论文 DOI、链接或本地 PDF：工作台用 **scansci-pdf 获取开放获取全文**，用 **MinerU 解析正文、图表与公式**，再由你配置的模型完成翻译与导读。阅读成果保存在本机，并汇入 **Excel 文献总表**，让你以后能找回论文、记录想法、查看理解程度、继续整理。
 
-**当前版本：Windows 公测版 rc.3。** [下载安装包](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.3) · [反馈问题](https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues)
+**当前版本：跨平台公测版 rc.4。** [下载安装包](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.4) · [反馈问题](https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues)
 
 ## 你会得到什么？
 
@@ -24,7 +24,7 @@
 
 | 需要什么 | 用来做什么 |
 | --- | --- |
-| Windows x64 + Codex 桌面端 | 安装和管理工作台；Codex 需要能打开并操作内置浏览器页面 |
+| Windows x64、macOS 或 Linux + Codex 环境 | 安装和管理工作台；内置浏览器联动需要 Codex 提供页面操作工具，平台与架构见 [兼容性指南](docs/platforms.md) |
 | 工作台自己的模型配置 | 翻译和生成导读：使用支持的 Codex 订阅登录，或配置模型 API |
 | MinerU API Key | 将 PDF 解析成正文、图表和公式；[从注册到配置的教程](docs/mineru-api-key.md) |
 | Excel 桌面版（使用总表时） | 打开文献总表、筛选和编辑个人记录；不装 Excel 也能入库和使用 Reader |
@@ -43,7 +43,7 @@
 请帮我安装 Deep Literature for Codex：
 https://github.com/TyrionH-is-coding/deep-literature-for-codex
 
-请下载 rc.3 Release 中的 Windows 安装包，核对 SHA256，
+请按我的操作系统和架构选择 rc.4 Release 安装包，核对 SHA256，
 解压后运行安装器并安装 Skill。
 完成后启动工作台，在内置浏览器打开并核对实例。
 需要账号登录时，由我本人完成。
@@ -53,12 +53,14 @@ https://github.com/TyrionH-is-coding/deep-literature-for-codex
 
 ### 也可以手动安装
 
-1. 打开 [rc.3 下载页](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.3)，展开 **Assets**。
-2. 下载 **deep-literature-for-codex-0.1.0-rc.3-win-x64.zip** 和 **SHA256SUMS.txt**。ZIP 已内置文献引擎，无需另下 TGZ。不要下载自动生成的 Source code ZIP。
+**下面是 Windows 步骤。macOS/Linux 请按 [跨平台安装指南](docs/platforms.md) 使用 `install.sh`。**
+
+1. 打开 [rc.4 下载页](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.4)，展开 **Assets**。
+2. 下载 **deep-literature-for-codex-0.1.0-rc.4-win-x64.zip** 和 **SHA256SUMS.txt**。ZIP 已内置文献引擎，无需另下 TGZ。不要下载自动生成的 Source code ZIP。
 3. 在下载目录打开 PowerShell，运行下面的命令，将结果与 SHA256SUMS.txt 中 ZIP 对应的一行比较：
 
 ```powershell
-Get-FileHash .\deep-literature-for-codex-0.1.0-rc.3-win-x64.zip -Algorithm SHA256
+Get-FileHash .\deep-literature-for-codex-0.1.0-rc.4-win-x64.zip -Algorithm SHA256
 ```
 
 4. 完整解压 ZIP。进入**能看到 install.ps1 的文件夹**，在该目录打开 PowerShell，执行：
@@ -129,7 +131,7 @@ powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific
 
 当前发行版的自动获取使用 scansci-pdf 的固定 OA 流程，默认尝试 **arXiv、Europe PMC** 的开放获取全文。找不到全文时会保留条目并等待 PDF，不会把网页当作正文继续解析。
 
-[scansci-pdf 上游](https://github.com/Rimagination/scansci-pdf) 还提供其他来源、机构登录和独立工具能力；**本工作台 rc.3 未自动启用上游全部功能，CARSI/WebVPN 也不是安装后就已接通。** 引擎保留了 Unpaywall 支持，但本工作台尚未提供所需联系邮箱的配置入口。机构全文是否能取得，取决于你的访问权限、当前浏览器工具与网站状态。
+[scansci-pdf 上游](https://github.com/Rimagination/scansci-pdf) 还提供其他来源、机构登录和独立工具能力；**本工作台 rc.4 未自动启用上游全部功能，CARSI/WebVPN 也不是安装后就已接通。** 引擎保留了 Unpaywall 支持，但本工作台尚未提供所需联系邮箱的配置入口。机构全文是否能取得，取决于你的访问权限、当前浏览器工具与网站状态。
 
 ### 复制这段，开始第一篇
 
@@ -254,7 +256,7 @@ Codex 会创建分类及对应的管理会话，导入论文并启动任务。�
 
 ## 当前版本的范围
 
-目前支持 Windows x64。已验证真实 MinerU 解析、订阅 Luna 翻译与复核、Reader 生成和重启恢复；测试过程中有管理员继续及纠错提示，**尚未保证全程无人干预**。译文、公式与导读仍需读者结合原文判断。
+rc.4 适配 Windows x64、macOS Intel/Apple Silicon、Linux x64/ARM64；平台安装与能力差异见 [兼容性指南](docs/platforms.md)。此前的 Windows 验收已验证真实 MinerU 解析、订阅 Luna 翻译与复核、Reader 生成和重启恢复；测试过程中有管理员继续及纠错提示，**尚未保证全程无人干预**。译文、公式与导读仍需读者结合原文判断。
 
 当前使用固定 Reader 模板和 Excel 字段；自定义模板、自定义字段、文献雷达尚未提供。Excel 桌面程序中的编辑、占用与回写流程尚未完成真实桌面端到端验收，兼容性问题欢迎反馈。
 

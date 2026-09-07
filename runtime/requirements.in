@@ -6,3 +6,5 @@ openpyxl<4,>=3.1
 scansci-pdf==1.9.0
 requests==2.34.2
 PySocks==1.7.1
+
+keyring==25.7.0; sys_platform != 'win32'

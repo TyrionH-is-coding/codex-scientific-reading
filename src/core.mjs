@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
+import { runtimePaths } from './platform.mjs';
 
 export const PRODUCT = 'codex-scientific-reading';
 export const DISPLAY_NAME = 'Deep Literature for Codex';
-export const VERSION = '0.1.0-rc.3';
+export const VERSION = '0.1.0-rc.4';
 
 export async function readJson(file) {
   return JSON.parse((await fs.readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
@@ -20,6 +21,7 @@ export async function writeJson(file, value) {
 }
 
 export async function initializeRoot(requested) {
+  if (/[\r\n\0]/.test(requested)) throw new Error('invalid_root');
   const absolute = path.resolve(requested);
   if (absolute === path.parse(absolute).root) throw new Error('invalid_root');
   await fs.mkdir(absolute, { recursive: true });
@@ -42,20 +44,25 @@ export async function initializeRoot(requested) {
 }
 
 // Only operating-system and explicit network settings cross into this host.
-export function isolatedEnvironment(root, parent = process.env, installation = {}) {
+export function isolatedEnvironment(root, parent = process.env, installation = {}, platform = process.platform) {
   const env = {};
   const keep = new Set(['SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT', 'TEMP', 'TMP',
     'USERPROFILE', 'LOCALAPPDATA', 'APPDATA', 'PROGRAMDATA', 'PROGRAMFILES',
     'PROGRAMFILES(X86)', 'COMMONPROGRAMFILES', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS',
     'USERNAME', 'USERDOMAIN', 'OS', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
-    'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS']);
+    'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS',
+    'HOME', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TMPDIR',
+    'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY']);
   for (const [key, value] of Object.entries(parent)) {
     if (keep.has(key.toUpperCase()) && value !== undefined) env[key.toUpperCase()] = value;
   }
   const windows = env.SYSTEMROOT || 'C:\\Windows';
+  const systemPaths = platform === 'win32'
+    ? [path.join(windows, 'System32'), windows, path.join(windows, 'System32', 'WindowsPowerShell', 'v1.0')]
+    : ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
   env.PATH = [installation.node ? path.dirname(installation.node) : path.join(root, 'runtime', 'node'),
-    installation.python ? path.dirname(installation.python) : path.join(root, 'runtime', 'venv', 'Scripts'),
-    path.join(windows, 'System32'), windows, path.join(windows, 'System32', 'WindowsPowerShell', 'v1.0')].join(path.delimiter);
+    installation.python ? path.dirname(installation.python) : path.join(root, 'runtime', 'venv', platform === 'win32' ? 'Scripts' : 'bin'),
+    ...systemPaths].join(path.delimiter);
   env.DSH_HOME = path.join(root, 'state', 'dsh-home');
   env.DSH_TELEMETRY_DISABLED = '1';
   env.PYTHONUTF8 = '1';
@@ -68,10 +75,7 @@ export function isolatedEnvironment(root, parent = process.env, installation = {
 }
 
 export function prerequisitePaths(root, pins) {
-  return {
-    node: path.join(root, 'runtime', 'node', pins.node.version, 'node.exe'),
-    pythonBase: path.join(root, 'runtime', 'python', `${pins.python.version}-${pins.python.build}`, 'python', 'python.exe'),
-  };
+  return runtimePaths(root, pins);
 }
 
 export async function verifyFile(file, expected) {
@@ -99,6 +103,7 @@ export async function installSkill(source, skillsRoot, root) {
   const target = path.join(skillsRoot, PRODUCT);
   const expected = await filesBelow(source);
   expected['installation.json'] = Buffer.from(JSON.stringify({ product: PRODUCT, root }, null, 2) + '\n');
+  expected['location.txt'] = Buffer.from(root + '\n');
   const receipt = path.join(root, 'state', 'installed-skill.json');
   const remember = () => writeJson(receipt, { target, files: fingerprints(expected) });
   let replace = false;

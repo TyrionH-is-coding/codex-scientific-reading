@@ -1,0 +1,4 @@
+darwin-arm64	https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz	db4b275b83736df67533529a18cc55de2549a8329ace6c7bcc68f8d22d3c9000
+darwin-x64	https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-x64.tar.gz	12a6abb9c2902cf48a21120da13f87fde1ed1b71a13330712949e8db818708ba
+linux-arm64	https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-arm64.tar.gz	b2f3a96f31486bfc365192ad65ced14833ad2a3c2e1bcefec4846902f264fa28
+linux-x64	https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-x64.tar.gz	978978a635eef872fa68beae09f0aad0bbbae6757e444da80b570964a97e62a3

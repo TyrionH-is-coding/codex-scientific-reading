@@ -3,10 +3,11 @@ import { start, status, stop } from './control.mjs';
 import { readJson, installSkill } from './core.mjs';
 import { rollbackRelease, recoverRelease, retireInstallation } from './releases.mjs';
 import { call } from './client.mjs';
+import { defaultRoot } from './platform.mjs';
 
 try {
   const [command = 'status', requested, skillsRoot] = process.argv.slice(2);
-  const root = path.resolve(requested || path.join(process.env.USERPROFILE, 'CodexScientificReading'));
+  const root = path.resolve(requested || defaultRoot());
   let result;
   if (command === 'call') {
     if (!skillsRoot) throw new Error('request_file_required');

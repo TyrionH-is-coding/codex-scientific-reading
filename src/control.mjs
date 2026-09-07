@@ -1,6 +1,6 @@
 import net from 'node:net';
 import fs from 'node:fs/promises';
-import { realpathSync } from 'node:fs';
+import { realpathSync, mkdirSync, lstatSync } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
@@ -24,7 +24,15 @@ export function pipeName(root) {
   const resolved = canonicalRoot(root);
   const identity = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
   const hash = createHash('sha256').update(identity).digest('hex').slice(0, 28);
-  return process.platform === 'win32' ? `\\\\.\\pipe\\csr-${hash}` : path.join(resolved, 'state', 'control.sock');
+  if (process.platform === 'win32') return `\\\\.\\pipe\\csr-${hash}`;
+  // Unix socket paths are limited to about 100 bytes on macOS. Keep them
+  // outside potentially long or non-ASCII install paths, isolated by UID.
+  const directory = `/tmp/deep-literature-${process.getuid()}`;
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const entry = lstatSync(directory);
+  if (!entry.isDirectory() || entry.isSymbolicLink() || entry.uid !== process.getuid()
+      || (entry.mode & 0o077)) throw new Error('insecure_control_directory');
+  return path.join(directory, `${hash}.sock`);
 }
 
 export async function request(root, command = 'status') {

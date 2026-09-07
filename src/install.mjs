@@ -6,17 +6,19 @@ import { createHash } from 'node:crypto';
 import { initializeRoot, isolatedEnvironment, prerequisitePaths, readJson, writeJson, verifyFile, installSkill, VERSION } from './core.mjs';
 import { activateRelease, recoverRelease } from './releases.mjs';
 import { restoreNewLibrary } from './library-transfer.mjs';
+import { selectPlatformPins, venvPython, npmCli, directoryLinkType } from './platform.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [requestedRoot, archive, requestedSkills, requestedBackup] = process.argv.slice(2);
 const skillsRoot = requestedSkills === '-' ? null : requestedSkills;
 const libraryBackup = requestedBackup === '-' ? null : requestedBackup;
-const pins = await readJson(path.join(source, 'runtime', 'pins.json'));
+const pins = selectPlatformPins(await readJson(path.join(source, 'runtime', 'pins.json')));
 await verifyFile(archive, pins.plugin.sha256);
 const instance = await initializeRoot(requestedRoot);
 const root = instance.root;
 const { node, pythonBase } = prerequisitePaths(root, pins);
 const sourceHash = createHash('sha256');
+sourceHash.update(pins.platform);
 async function hashTree(directory) {
   for (const item of (await fs.readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
     if (['node_modules', '.git', '.gitignore', '.work', 'tests', 'test-results'].includes(item.name)) continue;
@@ -27,10 +29,10 @@ async function hashTree(directory) {
   }
 }
 for (const directory of ['src', 'skills', 'oauth']) await hashTree(path.join(source, directory));
-for (const file of ['install.ps1', 'workbench.ps1', 'uninstall.ps1', 'package.json']) {
+for (const file of ['install.ps1', 'workbench.ps1', 'uninstall.ps1', 'install.sh', 'workbench.sh', 'uninstall.sh', 'package.json']) {
   sourceHash.update(file); sourceHash.update(await fs.readFile(path.join(source, file)));
 }
-for (const file of ['pins.json', 'package.json', 'package-lock.json', 'requirements.lock']) {
+for (const file of ['pins.json', 'posix-node.tsv', 'package.json', 'package-lock.json', 'requirements.lock']) {
   sourceHash.update(file); sourceHash.update(await fs.readFile(path.join(source, 'runtime', file)));
 }
 const appSha256 = sourceHash.digest('hex');
@@ -39,7 +41,7 @@ const appSha256 = sourceHash.digest('hex');
 const slot = path.join(root, 'releases', appSha256.slice(0, 16));
 const runtime = path.join(slot, 'runtime');
 const npmRoot = path.join(runtime, 'npm');
-const python = path.join(runtime, 'venv', 'Scripts', 'python.exe');
+const python = venvPython(path.join(runtime, 'venv'));
 const app = path.join(slot, 'app');
 const env = isolatedEnvironment(root, process.env, { node, python });
 async function run(command, args, label, cwd = root) {
@@ -79,10 +81,10 @@ if (!release) {
   env.NPM_CONFIG_USERCONFIG = path.join(runtime, 'npmrc');
   env.NPM_CONFIG_GLOBALCONFIG = path.join(runtime, 'npmrc-global');
   env.NPM_CONFIG_CACHE = path.join(root, 'runtime', 'cache', 'npm');
-  await run(node, [path.join(path.dirname(node), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  await run(node, [npmCli(node),
     'ci', '--ignore-scripts', '--no-audit', '--no-fund'], 'Install locked DSH packages', npmRoot);
   await run(pythonBase, ['-I', '-X', 'utf8', '-m', 'venv', path.join(runtime, 'venv')], 'Create private Python environment');
-  env.PIP_CONFIG_FILE = 'NUL';
+  env.PIP_CONFIG_FILE = process.platform === 'win32' ? 'NUL' : '/dev/null';
   env.PIP_CACHE_DIR = path.join(root, 'runtime', 'cache', 'pip');
   await run(python, ['-I', '-X', 'utf8', '-m', 'pip', 'install', '--disable-pip-version-check', '--no-input',
     '--index-url', 'https://pypi.org/simple', '--only-binary=:all:', '--require-hashes', '--no-deps',
@@ -109,11 +111,11 @@ if (!release) {
   const profileModules = path.join(slot, 'profile-modules');
   const pluginLink = path.join(profileModules, '@dsh-external', 'dsh-scientific-reading');
   await fs.mkdir(path.dirname(pluginLink), { recursive: true });
-  try { await fs.symlink(plugin, pluginLink, 'junction'); }
+  try { await fs.symlink(plugin, pluginLink, directoryLinkType()); }
   catch (error) { if (error.code !== 'EEXIST' || await fs.realpath(pluginLink) !== await fs.realpath(plugin)) throw error; }
   const oauthPath = path.join(npmRoot, 'node_modules', 'codex-scientific-reading-oauth');
   const oauthLink = path.join(profileModules, 'codex-scientific-reading-oauth');
-  try { await fs.symlink(oauthPath, oauthLink, 'junction'); }
+  try { await fs.symlink(oauthPath, oauthLink, directoryLinkType()); }
   catch (error) { if (error.code !== 'EEXIST' || await fs.realpath(oauthLink) !== await fs.realpath(oauthPath)) throw error; }
   release = { product: instance.product, version: VERSION, appSha256, slot, app, profileModules, profilePackage, dataFormat: 4, node, python,
     dsh: path.join(npmRoot, 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js'),
@@ -122,7 +124,9 @@ if (!release) {
 }
 const migration = libraryBackup ? await restoreNewLibrary(root, release, libraryBackup) : null;
 const selected = await activateRelease(root, release);
-for (const file of ['workbench.ps1', 'uninstall.ps1']) await fs.copyFile(path.join(source, file), path.join(root, file));
+for (const file of ['workbench.ps1', 'uninstall.ps1', 'workbench.sh', 'uninstall.sh']) await fs.copyFile(path.join(source, file), path.join(root, file));
+await fs.copyFile(path.join(source, 'src', 'launcher.mjs'), path.join(root, 'launcher.mjs'));
+await fs.writeFile(path.join(root, '.workbench-node'), node + '\n', { mode: 0o600 });
 const skill = skillsRoot ? await installSkill(path.join(app, 'skills', 'codex-scientific-reading'), path.resolve(skillsRoot), root) : null;
 console.log(JSON.stringify({ ok: true, root, instanceId: instance.instanceId, version: VERSION,
   candidate: release.candidate, installation: selected.status, skill, migration, start: { node, cli: path.join(app, 'src', 'cli.mjs'), args: ['start', root] } }, null, 2));

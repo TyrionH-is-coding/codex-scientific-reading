@@ -79,9 +79,9 @@
 
 ### 手动刷新命令（也可交给 Codex 执行）
 
-当前 rc.3 没有独立的“同步 Excel”页面按钮。下面使用安装包自带的文献引擎刷新，不需要安装系统 Python。
+当前 rc.4 没有独立的“同步 Excel”页面按钮。下面使用安装包自带的文献引擎刷新，不需要安装系统 Python。
 
-先保存并关闭工作簿，再在 PowerShell 中执行。自定义安装目录的用户修改第一行：
+下面是 Windows 命令，macOS/Linux 使用 [平台指南中的刷新命令](platforms.md#excel-与默认文件打开)。先保存并关闭工作簿，再在 PowerShell 中执行。自定义安装目录的用户修改第一行：
 
 ```powershell
 $readingRoot = Join-Path $env:USERPROFILE 'CodexScientificReading'

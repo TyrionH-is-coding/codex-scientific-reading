@@ -4,6 +4,8 @@ import net from 'node:net';
 import { initializeRoot, readJson, writeJson, removeManagedSkill } from './core.mjs';
 import * as control from './control.mjs';
 import { snapshotLibrary } from './library-transfer.mjs';
+import { directoryLinkType } from './platform.mjs';
+import { prepareLocalSocket } from './local-socket.mjs';
 
 const transitionFile = root => path.join(root, 'state', 'release-transition.json');
 export const maintenancePipe = root => `${control.pipeName(root)}-maintenance`;
@@ -13,6 +15,7 @@ async function optionalJson(file) {
 }
 
 async function exclusive(root, action) {
+  await prepareLocalSocket(maintenancePipe(root));
   const server = net.createServer(socket => { socket.on('error', () => {}); socket.end('maintenance'); });
   await new Promise((resolve, reject) => {
     server.once('error', error => reject(new Error(error.code === 'EADDRINUSE' ? 'maintenance_in_progress' : error.message)));
@@ -55,7 +58,7 @@ async function select(root, release) {
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (release) {
     if (release.profilePackage) await fs.copyFile(release.profilePackage, path.join(profile, 'package.json'));
-    await fs.symlink(release.profileModules, link, 'junction');
+    await fs.symlink(release.profileModules, link, directoryLinkType());
     await writeJson(path.join(root, 'installation.json'), release);
   } else await fs.rm(path.join(root, 'installation.json'), { force: true });
 }

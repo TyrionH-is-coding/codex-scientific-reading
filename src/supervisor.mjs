@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { initializeRoot, isolatedEnvironment, readJson, writeJson } from './core.mjs';
 import { pipeName, assertStartAllowed } from './control.mjs';
+import { prepareLocalSocket } from './local-socket.mjs';
 
 const instance = await initializeRoot(process.argv[2]);
 const root = instance.root;
@@ -61,6 +62,7 @@ const control = net.createServer(socket => {
   });
 });
 
+await prepareLocalSocket(pipeName(root));
 control.on('error', error => {
   // A concurrent start already acquired this instance's pipe.
   if (error.code === 'EADDRINUSE') process.exit(0);
@@ -74,7 +76,7 @@ control.listen(pipeName(root), async () => {
     const app = installed.app ?? path.join(root, 'app');
     const engineConfig = { dataRoot: path.join(root, 'library'), python: installed.python,
       enginePython: installed.python, scansciPython: installed.python,
-      scansciExe: path.join(path.dirname(installed.python), 'scansci-pdf.exe'), school: '', legalOnly: true,
+      scansciExe: path.join(path.dirname(installed.python), process.platform === 'win32' ? 'scansci-pdf.exe' : 'scansci-pdf'), school: '', legalOnly: true,
       outputDir: path.join(root, 'library', 'downloads'), loginType: 'carsi', presetId: 'scientific-reading', installPreset: true };
     await writeJson(patch, [
       { id: 'scientific-reading', config: engineConfig },
