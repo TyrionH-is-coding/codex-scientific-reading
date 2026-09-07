@@ -34,6 +34,8 @@
 
 后续使用真实返回的 folder_id。submit 键在同一逻辑请求的重试中保持不变；resume/attach 使用各自稳定键。不同输入重复使用同一键会返回 `idempotency_conflict`。
 
+`translation_retry_limit` 必须由用户明确要求继续后使用 `resume`，输入仅为 `{"retry_translation":true}`。随后读回任务再 `dispatch`；分类 agent 不能自行清除这个暂停。`accepted_blocks` 是已校验并保存的条数，`remaining_block_ids` 是下一次补译范围。`full-translation-v4` 只回传各块的 `block_id`、`translation_zh`，并带当前 gate 的批次、来源和完整源批次文件 SHA；英文和初步高亮由引擎绑定。旧任务的 v3 合同继续有效。
+
 `dispatched` 表示任务在进行，不代表 PDF/Reader 已存在。`waiting_user` 看 `job.detail.reason_code/required_input`；`waiting_agent` 调用 dispatch。`failed` 看 `error` 或 A job detail。
 
 已有投递回执再次调用 `dispatch` 时会恢复同一原生会话，按 rpcId 核对真实 inbox、`user/message` 和取消事件。`dispatch.evidence` 为 pending/delivered 时 status 保持 accepted；正常关闭 DSH 撤销的排队消息返回 canceled；证据不足返回 uncertain。相同 gate 不重发；已授权继续的明确撤销可使用新稳定 retryKey。领取消息但尚未组装成 user/message 的短暂窗口属于 uncertain，不能推断为取消。

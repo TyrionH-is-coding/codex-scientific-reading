@@ -30,7 +30,7 @@ function resultText(blocks) {
 
 function recoveryResults(options, latest) {
   const following = options.messages.slice(options.messages.indexOf(latest) + 1)
-  if (!latest || following.some(message => message.source?.kind === 'user')) return new Map()
+  if (!latest) return new Map()
   const results = new Map(following.flatMap(message => message.content).filter(block => block.type === 'tool-result').map(block => [block.toolCallId, block]))
   const confirmed = new Map()
   for (const call of latest.content.filter(block => block.type === 'tool-call')) {
@@ -60,6 +60,7 @@ export class SafeCodexAdapter extends CodexAppServerAdapter {
     const latest = options.messages.findLast(message => message.role === 'assistant')
     const replay = replayOf(latest)
     let current = this.sessions.get(key)
+    if (current && current.generation !== this.server.generation) current = undefined
     const foreignHistory = latest && latest.source?.provider !== 'openai-codex'
     const changed = current && (current.tools !== tools || (current.model !== options.model && current.pending.length > 0))
     if (current && !foreignHistory && !changed && (!replay || replay.threadId === current.threadId)) {
@@ -79,7 +80,7 @@ export class SafeCodexAdapter extends CodexAppServerAdapter {
         }
         current = { threadId: restored.id, tools, pending: [], backlog: [], continuity: 'resumed' }
       } catch (error) {
-        if (this.server.closed) throw error
+        if (this.server.closed || this.server.failure) throw error
         current = null
       }
     } else current = null
@@ -92,8 +93,12 @@ export class SafeCodexAdapter extends CodexAppServerAdapter {
       current.recoveryInput = 'The prior native turn was interrupted. Harness has persisted the following actual tool results. Use these outcomes; do not repeat the completed actions. Continue the original request.\n' + transcript(options.messages.slice(options.messages.indexOf(latest)))
     }
     current.model = options.model
+    current.generation = this.server.generation
     current.toolsHash = toolsHash
-    current.recoveredResults = confirmed
+    // A new explicit user request may intentionally repeat an action. Preserve
+    // its historical result as context, but do not suppress that new request.
+    current.recoveredResults = options.messages.slice(options.messages.indexOf(latest) + 1)
+      .some(message => message.source?.kind === 'user') ? new Map() : confirmed
     this.sessions.set(key, current)
     return current
   }

@@ -37,6 +37,8 @@ sh "<Skill目录>/scripts/workbench.sh" start
 
 需要全文解析时，引导到“设置与状态”保存 MinerU API Token，密钥只在用户自己的页面填写，不发送到聊天。模型与解析状态未经实际核验时，明确报告“待配置/待验证”，不能把安装成功写成全流程可用。
 
+“设置与状态”按模型与连接、PDF 解析、文献库、关于排列。模型按钮打开 DSH 原生配置；Codex 登录状态属于当前实例。关于中的环境重检不会发送论文，MinerU 密钥已保存也不等于解析 API 已实调成功。
+
 ## 总管理与交接
 
 所有动作通过安装根自带的 `call` 接口，具体合同见 [references/api.md](references/api.md)。将 UTF-8 JSON 请求写入临时文件，再运行：
@@ -55,6 +57,8 @@ macOS/Linux 的同等调用为 `sh "<Skill目录>/scripts/workbench.sh" call "<�
 6. 完成须来自 `task.status=completed` 且包含经清单与 HTTP SHA 校验的 Reader；打开它供用户阅读。数据变化或状态失败时说明具体 error。取消会撤回本任务排队消息，只在能确认当前 turn 属于本任务时中断；A 已启动的解析可能仍在结束，以实际任务状态为准。
 
 DSH 的分类工具有宿主和 Python 范围校验；其子会话继承分类。未绑定/归档的会话无法调用工具。不要绕过限制给分类会话 shell、文件编辑、全局库设置或通用浏览器/HTTP 工具。原任务 gate 材料由 `csr_read_job_input` 分页读取。
+
+翻译按当前 gate 的合同与剩余块继续，已接收的译文不重写。`translation_retry_limit` 表示本批已用完初次提交后的两次补试，保留草稿并报告进度；仅在用户明确要求继续后，由总管 `resume` 提交 `input:{retry_translation:true}`，再 `dispatch` 原任务。模型进程中断后下一次请求可以重建连接，但失败的请求不会自动重放；先核对任务回执和实际工具结果。
 
 重启后，`waiting_agent` 应再次调用同 gate 的 `dispatch` 核对原生投递证据；旧回执的 accepted 不能证明消息仍在排队。返回 `dispatch.status=canceled` 表示 DSH 已撤销该排队消息，可在用户已授权继续该任务的范围内用一个新的稳定 retryKey 继续；`uncertain` 则先核对会话和任务，避免重复操作。不要自动轮换重试键。
 

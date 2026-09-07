@@ -58,7 +58,8 @@ export async function readJobInput(root, engine, scope, args) {
   const offset = args.offset ?? 0, limit = args.limit ?? 20000;
   if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 50000) throw new Error('invalid_page');
   const job = await engine(['job-status', '--job-id', args.job_id], undefined, scope);
-  const requested = job.detail?.required_input?.[args.field];
+  const gate = job.detail?.required_input;
+  const requested = gate?.[args.field];
   if (typeof requested !== 'string') throw new Error('job_input_unavailable');
   const papersRoot = await fs.realpath(path.join(root, 'library', 'papers'));
   const paperRoot = await fs.realpath(path.join(papersRoot, job.paper_id));
@@ -67,9 +68,23 @@ export async function readJobInput(root, engine, scope, args) {
   const file = await fs.realpath(requested);
   const relative = path.relative(paperRoot, file);
   if (!relative || relative.startsWith('..') || path.isAbsolute(relative) || path.extname(file) !== '.json') throw new Error('job_input_outside_paper');
-  const text = await fs.readFile(file, 'utf8');
+  const raw = await fs.readFile(file);
+  let text = raw.toString('utf8');
+  if (args.field === 'source_manifest_path' && gate.submission_contract_version === 'full-translation-v4') {
+    if (createHash('sha256').update(raw).digest('hex') !== gate.batch_sha256) throw new Error('job_input_changed');
+    const source = JSON.parse(text);
+    const remaining = gate.remaining_block_ids;
+    if (source.batch_id !== gate.batch_id || source.source_sha256 !== gate.source_sha256
+      || !Array.isArray(source.blocks) || !Array.isArray(remaining) || !remaining.length
+      || new Set(remaining).size !== remaining.length) throw new Error('job_input_invalid');
+    const blocks = source.blocks.filter(block => remaining.includes(block.block_id));
+    if (JSON.stringify(blocks.map(block => block.block_id)) !== JSON.stringify(remaining)) throw new Error('job_input_invalid');
+    // The fingerprint binds the immutable full source file, not this agent view.
+    text = JSON.stringify({ ...source, translation_contract_version: gate.submission_contract_version,
+      batch_sha256: gate.batch_sha256, accepted_blocks: gate.accepted_blocks, blocks }, null, 2);
+  }
   const current = await engine(['job-status', '--job-id', args.job_id], undefined, scope);
-  if (current.detail?.required_input?.[args.field] !== requested) throw new Error('job_gate_changed');
+  if (JSON.stringify(current.detail?.required_input) !== JSON.stringify(gate)) throw new Error('job_gate_changed');
   return { job_id: args.job_id, field: args.field, offset, total: text.length,
     text: text.slice(offset, offset + limit), nextOffset: offset + limit < text.length ? offset + limit : null };
 }

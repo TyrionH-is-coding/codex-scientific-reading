@@ -6,7 +6,7 @@
 
 **当前版本：跨平台公测版 rc.6。** [下载安装包](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6) · [反馈问题](https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues)
 
-主线正在准备 rc.7：Excel 长期管理已整合为文献、阅读成果、图表索引三个业务页，支持六项个人记录、检索和冲突保护。以下管理说明对应新实现；已发布 rc.6 使用旧表，不会因源码更新自动升级。查看 [本轮验收](docs/excel-v0.1-acceptance.md) 和 [macOS 实装报告跟进](docs/macos-first-run-followup.md)。
+主线正在准备 rc.8：Excel 长期管理支持六项个人记录、检索和冲突保护；设置页改为分组行布局，并补齐模型进程恢复、翻译草稿保留与有限补试。以下管理说明对应新实现；已发布 rc.6 不会因源码更新自动升级。查看 [Excel 验收](docs/excel-v0.1-acceptance.md)、[发布前工程审视](docs/release-engineering-review.md) 和 [macOS 实装报告跟进](docs/macos-first-run-followup.md)。
 
 ## 你会得到什么？
 

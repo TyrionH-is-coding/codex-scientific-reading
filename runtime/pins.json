@@ -16,11 +16,11 @@
   "dsh": "0.1.0-rc.7",
   "plugin": {
     "name": "@dsh-external/dsh-scientific-reading",
-    "version": "0.1.0-rc.6",
-    "sha256": "1c4073f73855cabe7a85ac19192f9dc25d8f48018489bdb9ff78f903ea2d1af8",
-    "source": "Excel 长期管理与数据库 v5；本地候选包内置，尚未公开发布",
-    "sourceCommit": "2375b87bb3fc451297128cccdfadba3c5f6d92a5",
-    "url": "https://github.com/TyrionH-is-coding/dsh-scientific-reading/releases/download/v0.1.0-rc.6/dsh-external-dsh-scientific-reading-0.1.0-rc.6.tgz"
+    "version": "0.1.0-rc.7",
+    "sha256": "bda6d168a534e19b6e3e59fa02a6fe18c87fffa4c308294893fa2ed38ecb0580",
+    "source": "设置页行布局、翻译草稿保留与有限补试；本地候选包内置，尚未公开发布",
+    "sourceCommit": "f3e3298418ac17ca173727705eafb9755b5e2866",
+    "url": "https://github.com/TyrionH-is-coding/dsh-scientific-reading/releases/download/v0.1.0-rc.7/dsh-external-dsh-scientific-reading-0.1.0-rc.7.tgz"
   },
   "platforms": {
     "darwin-arm64": {

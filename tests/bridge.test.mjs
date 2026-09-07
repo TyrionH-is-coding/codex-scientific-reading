@@ -7,6 +7,40 @@ import http from 'node:http';
 import { createHash } from 'node:crypto';
 import { categoryGuard, cancelOwnedDispatch, readJobInput, verifyReader, engineAdapter, dshRpc } from '../src/bridge-services.mjs';
 
+test('分类工具不能清除翻译补试暂停，普通续接仍按实际分类执行', async t => {
+  const { apply } = await import('../src/bridge.mjs');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-retry-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const plugin = path.join(root, 'node_modules', '@dsh-external', 'dsh-scientific-reading');
+  await fs.mkdir(plugin, { recursive: true });
+  await fs.mkdir(path.join(root, 'state'));
+  await fs.writeFile(path.join(plugin, 'package.json'), JSON.stringify({ type: 'module', main: 'index.mjs' }));
+  await fs.writeFile(path.join(plugin, 'index.mjs'), `
+    export const withEngineScope = (scope, next) => next();
+    export async function engineJson(config, args) { config.calls.push(args); return {ok:true,json:config.job}; }
+  `);
+  await fs.writeFile(path.join(root, '.workbench.json'), JSON.stringify({ instanceId: 'fixture' }));
+  await fs.writeFile(path.join(root, 'installation.json'), JSON.stringify({ dsh: path.join(root, 'host.mjs') }));
+  await fs.writeFile(path.join(root, 'state', 'handoff.json'), JSON.stringify({ schema: 1, instanceId: 'fixture',
+    bindings: { one: { sessionId: 'bound', folderId: 'f1', active: true } }, children: {}, tasks: {} }));
+  const handlers = new Map();
+  const ctx = { on: (name, handler) => handlers.set(name, handler),
+    tools: { guard() {}, register() {} }, systemPrompt: { section() {} },
+    agents: { get() {} }, webServer: { port: 0, register() {} } };
+  const engineConfig = { calls: [], job: { status: 'waiting_user', detail: { reason_code: 'translation_retry_limit' } } };
+  await apply(ctx, { root, engineConfig });
+  const execute = handlers.get('tools/execute');
+  const request = { name: 'sr_continue_full_read', agent: { session: { id: 'bound' } },
+    arguments: { job_id: 'job_1234567890abcdef', input: { retry_translation: true } } };
+  let entered = 0;
+  await assert.rejects(execute(request, () => entered++), /translation_retry_requires_user/);
+  assert.equal(entered, 0);
+  engineConfig.job.detail.reason_code = 'translate_full_read';
+  await execute(request, () => entered++);
+  assert.equal(entered, 1);
+  assert.ok(engineConfig.calls.every(args => args[0] === 'job-status' && args[2] === request.arguments.job_id));
+});
+
 test('原生交接证据识别持久队列被正常停止撤销，并优先使用实际 pending 或 delivered', async () => {
   const { inspectDispatchEvidence } = await import('../src/bridge-services.mjs');
   assert.equal(typeof inspectDispatchEvidence, 'function');
@@ -116,6 +150,38 @@ test('A 门槛退出码保持真实状态，scope 错误不会伪装为正常任
   assert.equal((await engine(['job-status'], undefined, { scopeFolderId: 'f' })).status, 'waiting_user');
   await assert.rejects(engine(['library-item-v2'], undefined, { scopeFolderId: 'f' }), /scope_changed/);
   assert.equal(calls, 2);
+});
+
+test('最小翻译视图只包含待补块，原文件不变且拒绝陈旧 gate', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'csr-compact-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const paper = path.join(root, 'library', 'papers', 'p1');
+  await fs.mkdir(paper, { recursive: true });
+  const file = path.join(paper, 'batch.json');
+  const source = { batch_id: 'batch-0001', source_sha256: 'a'.repeat(64), translation_contract_version: 'full-translation-v3',
+    blocks: [{ block_id: 'b1', english: 'Already translated' }, { block_id: 'b2', english: 'Exact source ≥ α' }] };
+  const raw = JSON.stringify(source);
+  await fs.writeFile(file, raw);
+  const gate = { source_manifest_path: file, source_sha256: source.source_sha256, batch_id: source.batch_id,
+    batch_sha256: createHash('sha256').update(raw).digest('hex'), submission_contract_version: 'full-translation-v4',
+    remaining_block_ids: ['b2'], accepted_blocks: 1 };
+  let reads = 0, change = false;
+  const engine = async () => ({ paper_id: 'p1', detail: { required_input: {
+    ...gate, ...(change && reads++ > 0 ? { remaining_block_ids: ['b1'] } : {}) } } });
+  const args = { job_id: 'job_1234567890abcdef', field: 'source_manifest_path' };
+  const result = JSON.parse((await readJobInput(root, engine, {}, args)).text);
+  assert.deepEqual(result.blocks, [source.blocks[1]]);
+  assert.equal(result.translation_contract_version, 'full-translation-v4');
+  assert.equal(result.batch_sha256, gate.batch_sha256);
+  assert.equal(await fs.readFile(file, 'utf8'), raw);
+  change = true;
+  await assert.rejects(readJobInput(root, engine, {}, args), /job_gate_changed/);
+  change = false;
+  gate.remaining_block_ids = ['missing'];
+  await assert.rejects(readJobInput(root, engine, {}, args), /job_input_invalid/);
+  gate.remaining_block_ids = ['b2'];
+  await fs.writeFile(file, raw + ' ');
+  await assert.rejects(readJobInput(root, engine, {}, args), /job_input_changed/);
 });
 
 test('job-status 失败时返回完整 JSON，并把 detail.error 作为可识别错误', async () => {

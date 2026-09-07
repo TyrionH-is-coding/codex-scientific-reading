@@ -88,7 +88,7 @@ control.listen(pipeName(root), async () => {
     ]);
     const env = isolatedEnvironment(root, process.env, installed);
     env.CSR_IDENTITY = JSON.stringify({ product: state.product, instanceId: state.instanceId,
-      launchId: state.launchId, version: state.version, candidate: state.candidate });
+      launchId: state.launchId, version: state.version, candidate: state.candidate, dshVersion: installed.pins?.dsh });
     if (stopping) return;
     const log = await fs.open(path.join(root, 'state', 'logs', 'dsh.log'), 'a');
     if (stopping) { await log.close(); return; }

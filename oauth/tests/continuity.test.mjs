@@ -3,6 +3,7 @@ import test from 'node:test'
 import { SafeCodexAdapter } from '../index.mjs'
 
 class Server {
+  generation = 1
   starts = []; resumes = []; turns = []; responses = []; interrupts = []; events = []
   async account() { return { type: 'chatgpt' } }
   async models() { return [{ model: 'fixture-model', displayName: 'Fixture' }] }
@@ -145,4 +146,40 @@ test('PB-08 account metadata update during a turn cannot destroy its replay mapp
   server.startTurn = async (...args) => { const id = await startTurn(...args); adapter.invalidate(); return id }
   const result = await Array.fromAsync(adapter.stream({ ...base, messages: [user('fixture')] }))
   assert.equal(result.at(-1).replayState.response.threadId, 'native-1')
+})
+
+test('同一宿主内模型进程重建后恢复持久会话，不沿用旧 RPC 标识', async () => {
+  const server = new Server(); server.toolNext = true
+  const adapter = new SafeCodexAdapter(server)
+  const first = await Array.fromAsync(adapter.stream({ ...base, messages: [user('write once')] }))
+  server.generation++
+  server.savedTurns = [{ id: 'old-turn', status: 'inProgress' }]
+  const result = await Array.fromAsync(adapter.stream({ ...base, messages: [user('write once'), assistant(first, [toolBlock]), toolResult] }))
+  assert.equal(server.resumes.length, 1)
+  assert.equal(server.responses.length, 0)
+  assert.match(server.turns.at(-1).input.input[0].text, /confirmed persisted result/)
+  assert.equal(result.at(-1).reason.kind, 'stop')
+})
+
+test('追加继续消息不能绕过中断工具结果未明的保护', async () => {
+  const firstServer = new Server(); firstServer.toolNext = true
+  const first = await Array.fromAsync(new SafeCodexAdapter(firstServer).stream({ ...base, messages: [user('write once')] }))
+  const server = new Server()
+  await assert.rejects(Array.fromAsync(new SafeCodexAdapter(server).stream({ ...base,
+    messages: [user('write once'), assistant(first, [toolBlock]), user('continue')] })),
+  error => error.code === 'RECOVERY_REQUIRES_TOOL_RESULT')
+  assert.equal(server.turns.length, 0)
+})
+
+test('恢复时保留已执行结果的上下文，但不吞掉用户明确要求的新操作', async () => {
+  const server = new Server(); server.toolNext = true
+  const adapter = new SafeCodexAdapter(server)
+  const first = await Array.fromAsync(adapter.stream({ ...base, messages: [user('write once')] }))
+  server.generation++; server.toolNext = true
+  const result = await Array.fromAsync(adapter.stream({ ...base,
+    messages: [user('write once'), assistant(first, [toolBlock]), toolResult, user('write it again')] }))
+  assert.match(server.turns.at(-1).input.input[0].text, /confirmed persisted result/)
+  assert.match(server.turns.at(-1).input.input[0].text, /write it again/)
+  assert.equal(result.at(-1).reason.kind, 'tool-calls')
+  assert.equal(server.responses.length, 0)
 })
