@@ -1,5 +1,11 @@
 # Deep Literature for Codex 验收记录
 
+## rc.6：Issue #6 空图表归一化修复
+
+新增 70 项引擎回归，MinerU 模型/归一化专项共 90 项通过；Windows 本地 Python 引擎 484 passed / 3 skipped。发行验收在五个平台各增加一项已安装 wheel 的复现检查（合成空 table/image/chart、来源哈希、后续正文保留和非空内容错误），每个平台共 26 项。最终结果以 rc.6 Release 附件及对应 Git SHA 的 CI 为准。
+
+原论文 PDF、原始 MinerU 导出和最终 Reader 不在本轮实测范围；空条目仍带人工核对警告，不能据此宣称内容无损。详见 [Issue #6 记录](issue-6.md)。
+
 ## rc.5 兼容性修复验收（2026-09-07）
 
 本轮新增 OAuth 原生程序启动、安装后配置提示、Skill 改名迁移，以及 Excel/LibreOffice 占用时保留原表。Windows 本地工作台测试 51 passed / 1 skipped、OAuth 33 passed；引擎 414 passed / 3 skipped，完整 npm test 通过。

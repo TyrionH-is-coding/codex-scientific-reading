@@ -87,6 +87,8 @@ try {
   const engine = async (args, input = '') => run(installed.python, ['-I', '-X', 'utf8', '-m', 'scientific_reading', '--data-root', path.join(root, 'library'), ...args], input);
   const ingest = JSON.parse((await engine(['library-ingest'], JSON.stringify({ title: 'Platform acceptance fixture', doi: '10.9999/platform-fixture', authors: ['Fixture'] }))).stdout);
   check('real installed engine stores a paper', Boolean(ingest.paper_id));
+  await run(installed.python, ['-I', '-X', 'utf8', path.join(source, 'scripts', 'fixtures', 'mineru-empty-visual.py'), path.join(temporary, 'mineru-fixture')]);
+  check('installed wheel passes MinerU empty visual regression with provenance and integrity guards', true);
   const xlsx = JSON.parse((await engine(['xlsx-refresh'])).stdout);
   check('real installed engine generates the Excel library', xlsx.status === 'success' && xlsx.rows === 1);
   await run(installed.python, ['-I', '-X', 'utf8', '-c',
