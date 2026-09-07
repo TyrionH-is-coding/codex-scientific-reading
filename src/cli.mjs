@@ -4,6 +4,7 @@ import { readJson, installSkill, SKILL_NAME } from './core.mjs';
 import { rollbackRelease, recoverRelease, retireInstallation } from './releases.mjs';
 import { call } from './client.mjs';
 import { defaultRoot } from './platform.mjs';
+import { setupSteps } from './onboarding.mjs';
 
 try {
   const [command = 'status', requested, skillsRoot] = process.argv.slice(2);
@@ -16,6 +17,10 @@ try {
     if (!skillsRoot) throw new Error('skills_directory_required');
     await readJson(path.join(root, 'installation.json'));
     result = await installSkill(path.join(import.meta.dirname, '..', 'skills', SKILL_NAME), path.resolve(skillsRoot), root);
+    if (result.status !== 'retained_custom_changes') {
+      result.setupSteps = setupSteps;
+      console.error('\n接下来完成首次配置：\n' + setupSteps.join('\n'));
+    }
   } else {
     const action = { start, status, stop, rollback: rollbackRelease, recover: recoverRelease, retire: retireInstallation }[command];
     if (!action) throw new Error('unknown_command: start | status | stop | call | install-skill | rollback | recover | retire');

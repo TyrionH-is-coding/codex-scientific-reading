@@ -59,7 +59,11 @@ try {
   const args = process.platform === 'win32'
     ? ['-NoProfile', '-File', path.join(source, 'install.ps1'), '-Root', root, '-PluginArchive', archive, '-InstallSkill', '-SkillsDirectory', skills]
     : [path.join(source, 'install.sh'), '--root', root, '--plugin-archive', archive, '--install-skill', '--skills-directory', skills];
-  report.installSeconds = (await run(shell, args)).seconds;
+  const installationRun = await run(shell, args);
+  report.installSeconds = installationRun.seconds;
+  check('installation explains Codex OAuth and MinerU setup', installationRun.stderr.includes('/api/codex-oauth/ui') && installationRun.stderr.includes('MinerU'));
+  const skillRoot = path.join(skills, 'deep-literature-for-codex');
+  check('installed Skill uses the new name', /^name: deep-literature-for-codex$/m.test(await fs.readFile(path.join(skillRoot, 'SKILL.md'), 'utf8')));
   const installed = await readJson(path.join(root, 'installation.json'));
   check('installs the intended runtime architecture', installed.pins.platform === `${process.platform}-${process.arch}`);
   const started = await control('start');
@@ -69,6 +73,15 @@ try {
   check('HTTP identity matches the installed instance', identity.instanceId === started.json.instanceId);
   const page = await fetch(started.json.url).then(r => ({ ok: r.ok, contentType: r.headers.get('content-type') }));
   check('workbench serves its web UI', page.ok && page.contentType.includes('text/html'));
+  const oauth = await fetch(started.json.url + '/api/codex-oauth').then(r => r.json());
+  check('installed native OAuth starts with an isolated unauthenticated account', oauth.status === 'unauthenticated' && oauth.authenticated === false);
+  const loginPage = await fetch(started.json.url + '/api/codex-oauth/ui').then(r => r.text());
+  check('OAuth page provides the explicit authorization link', loginPage.includes('打开 OpenAI 授权页'));
+  const skillArgs = process.platform === 'win32'
+    ? ['-NoProfile', '-File', path.join(skillRoot, 'scripts', 'workbench.ps1'), 'status']
+    : [path.join(skillRoot, 'scripts', 'workbench.sh'), 'status'];
+  const skillStatus = JSON.parse((await run(shell, skillArgs)).stdout.replace(/^\uFEFF/, ''));
+  check('installed Skill wrapper controls the same host', skillStatus.instanceId === started.json.instanceId && skillStatus.launchId === started.json.launchId);
   const repeated = await control('start');
   check('repeated start reuses the same host', repeated.json.launchId === started.json.launchId);
   const engine = async (args, input = '') => run(installed.python, ['-I', '-X', 'utf8', '-m', 'scientific_reading', '--data-root', path.join(root, 'library'), ...args], input);
@@ -79,11 +92,22 @@ try {
   await run(installed.python, ['-I', '-X', 'utf8', '-c',
     "from scientific_reading.secret_store import MineruSecretStore; from pathlib import Path; import sys; s=MineruSecretStore(Path(sys.argv[1]));\ntry:\n s.save('synthetic-platform-smoke'); assert s.load()=='synthetic-platform-smoke'\nfinally:\n s.delete()\nassert s.load() is None\nprint('native credential roundtrip passed')", path.join(temporary, 'keyring-fixture')]);
   check('native OS credential store saves, reads and deletes an instance-scoped credential', true);
-  const notesCode = "from openpyxl import load_workbook; import sys; p=sys.argv[1]; w=load_workbook(p); s=w['文献']; h={c.value:c.column for c in s[1]}; s.cell(2,h['用户笔记']).value='saved platform note'; w.save(p); w.close()";
+  const notesCode = "from openpyxl import load_workbook; import sys; p=sys.argv[1]; w=load_workbook(p); s=w['文献']; h={c.value:c.column for c in s[1]}; s.cell(2,h['个人思考']).value='跨平台思考'; s.cell(2,h['个人理解程度']).value='待复读'; s.cell(2,h['用户笔记']).value='saved platform note'; w.save(p); w.close()";
   await run(installed.python, ['-I', '-X', 'utf8', '-c', notesCode, xlsx.path]);
+  const workbookBytes = await fs.readFile(xlsx.path);
+  for (const name of ['~$scientific-reading.xlsx', '.~lock.scientific-reading.xlsx#']) {
+    const lock = path.join(path.dirname(xlsx.path), name);
+    await fs.writeFile(lock, 'synthetic office owner', { flag: 'wx' });
+    try {
+      const blocked = JSON.parse((await engine(['xlsx-refresh'])).stdout);
+      check('Excel owner marker defers refresh: ' + name, blocked.status === 'pending' && blocked.error.code === 'xlsx_in_use');
+      check('open workbook bytes are preserved: ' + name, workbookBytes.equals(await fs.readFile(xlsx.path)));
+    } finally { await fs.unlink(lock); }
+  }
   check('Excel notes refresh successfully', JSON.parse((await engine(['xlsx-refresh'])).stdout).status === 'success');
-  await run(installed.python, ['-I', '-X', 'utf8', '-c', "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); assert c.execute('SELECT user_notes FROM items').fetchone()[0]=='saved platform note'; c.close()", path.join(root, 'library', 'library.sqlite')]);
-  check('saved Excel note is written back to the library', true);
+  const verifyNotes = async () => run(installed.python, ['-I', '-X', 'utf8', '-c', "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); assert c.execute('SELECT personal_thoughts,understanding_level,user_notes FROM items').fetchone()==('跨平台思考','待复读','saved platform note'); c.close()", path.join(root, 'library', 'library.sqlite')]);
+  await verifyNotes();
+  check('all three saved Excel fields are written back to the library', true);
   const backup = JSON.parse((await engine(['library-backup', '--output', path.join(temporary, 'library.zip'), '--timeout', '30'])).stdout);
   check('consistent library backup completes', backup.status === 'completed');
   report.stopSeconds = (await control('stop')).seconds;
@@ -93,6 +117,8 @@ try {
   await control('stop');
   report.reinstallSeconds = (await run(shell, args)).seconds;
   check('reinstall preserves the same library', JSON.parse((await engine(['xlsx-refresh'])).stdout).rows === 1);
+  await verifyNotes();
+  check('restart and reinstall preserve all three Excel fields', true);
   const uninstallArgs = process.platform === 'win32' ? ['-NoProfile', '-File', path.join(root, 'uninstall.ps1')] : [path.join(root, 'uninstall.sh')];
   await run(shell, uninstallArgs);
   check('uninstall preserves the database and Excel workbook', (await fs.stat(xlsx.path)).isFile() && (await fs.stat(path.join(root, 'library', 'library.sqlite'))).isFile());

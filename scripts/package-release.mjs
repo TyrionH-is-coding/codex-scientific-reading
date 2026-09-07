@@ -33,7 +33,7 @@ for (const folder of ['src', 'skills', 'scripts', 'tests']) {
 for (const file of ['package.json', 'package-lock.json', 'pins.json', 'posix-node.tsv', 'requirements.in', 'requirements.lock']) await copy('runtime/' + file);
 for (const file of ['index.mjs', 'adapter.mjs', 'app-server.mjs', 'control.mjs', 'http.mjs', 'ui.mjs', 'cordis.patch.yml', 'LICENSE', 'README.md', 'package.json', 'package-lock.json', 'provenance.json']) await copy('oauth/' + file);
 for (const file of ['adapter.js', 'LICENSE']) await copy('oauth/vendor/dsh-openai-oauth/' + file);
-for (const file of ['lifecycle.md', 'oauth.md', 'handoff-contract.md', 'release-notes.md', 'acceptance.md', 'mineru-api-key.md', 'excel-library.md', 'platforms.md']) await copy('docs/' + file);
+for (const file of ['lifecycle.md', 'oauth.md', 'handoff-contract.md', 'release-notes.md', 'acceptance.md', 'mineru-api-key.md', 'excel-library.md', 'platforms.md', 'model-tests.md']) await copy('docs/' + file);
 await copy('inputs/scientific-reading.tgz', archive);
 const files = {};
 async function inventory(directory) {

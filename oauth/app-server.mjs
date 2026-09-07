@@ -11,10 +11,20 @@ export function isolatedEnvironment(home, source = process.env) {
   return { ...Object.fromEntries(Object.entries(source).filter(([key]) => allowed.test(key))), CODEX_HOME: home }
 }
 
-export function codexExecutable() {
-  if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('This B candidate requires Windows x64')
-  const require = createRequire(import.meta.url)
-  return join(dirname(require.resolve('@openai/codex-win32-x64/package.json')), 'vendor', 'x86_64-pc-windows-msvc', 'bin', 'codex.exe')
+export function codexExecutable({ platform = process.platform, arch = process.arch,
+  resolvePackage = createRequire(import.meta.url).resolve } = {}) {
+  // Match the native package layout shipped by the pinned official Codex CLI.
+  const targets = {
+    'win32-x64': 'x86_64-pc-windows-msvc',
+    'darwin-arm64': 'aarch64-apple-darwin',
+    'darwin-x64': 'x86_64-apple-darwin',
+    'linux-arm64': 'aarch64-unknown-linux-musl',
+    'linux-x64': 'x86_64-unknown-linux-musl',
+  }
+  const triple = targets[`${platform}-${arch}`]
+  if (!triple) throw new Error(`Unsupported Codex OAuth platform: ${platform}-${arch}`)
+  return join(dirname(resolvePackage(`@openai/codex-${platform}-${arch}/package.json`)),
+    'vendor', triple, 'bin', platform === 'win32' ? 'codex.exe' : 'codex')
 }
 
 class EventQueue {
@@ -97,7 +107,7 @@ export class AppServer {
     child.on('error', () => this.fail(new Error('Codex app-server failed to start')))
     child.on('close', code => { this.fail(new Error(`Codex app-server exited (${String(code)})`)); this.child = null })
     await this.request('initialize', {
-      clientInfo: { name: 'codex_scientific_reading', title: 'Codex Scientific Reading', version: '0.1.0' },
+      clientInfo: { name: 'codex_scientific_reading', title: 'Deep Literature for Codex', version: '0.1.0' },
       capabilities: { experimentalApi: true },
     })
     this.send({ method: 'initialized', params: {} })

@@ -23,6 +23,8 @@
 
 这是当前发行版的实际目录结构，包含两层 `library`。如果安装时指定了其他根目录，替换前面的 `%USERPROFILE%\CodexScientificReading`，后面的相对路径不变。
 
+macOS/Linux 默认路径是 `$HOME/CodexScientificReading/library/library/scientific-reading.xlsx`。macOS 使用 `open "总表绝对路径"`，Linux 桌面使用 `xdg-open "总表绝对路径"`；没有图形桌面或关联软件时保留路径供用户取用。macOS/Linux 当前只打开工作簿，按论文名或文献 ID 查找，不提供自动选行。
+
 可以将路径粘贴到资源管理器地址栏打开。需要本机安装关联 XLSX 的表格软件；建议使用 Excel 桌面版。**“定位 Excel”在支持 Excel 自动化时会选中该论文的行；否则只打开工作簿，请使用查找定位论文名。**
 
 首次入库或后台更新尚未结束时，总表可能还未生成，按下面的刷新步骤生成即可。没有 Excel 也能使用工作台和 Reader。
@@ -79,7 +81,7 @@
 
 ### 手动刷新命令（也可交给 Codex 执行）
 
-当前 rc.4 没有独立的“同步 Excel”页面按钮。下面使用安装包自带的文献引擎刷新，不需要安装系统 Python。
+当前版本没有独立的“同步 Excel”页面按钮。下面使用安装包自带的文献引擎刷新，不需要安装系统 Python。
 
 下面是 Windows 命令，macOS/Linux 使用 [平台指南中的刷新命令](platforms.md#excel-与默认文件打开)。先保存并关闭工作簿，再在 PowerShell 中执行。自定义安装目录的用户修改第一行：
 
@@ -113,6 +115,7 @@ $readingInstall = Get-Content -LiteralPath (Join-Path $readingRoot 'installation
 | --- | --- |
 | 提示工作簿未生成 | 确认已有文献，再执行上述刷新命令 |
 | Excel 打开着，更新处于 pending | 保存并关闭文件，重新刷新；PDF、Reader 和已完成任务不会因这次表格同步失败而回滚 |
+| xlsx_in_use | 检测到 Excel/LibreOffice 占用标记，原表保留。先正常保存并退出表格软件；不要让 Codex 自动删除标记。部分软件不生成标记，仍需先保存关闭 |
 | 保存后没看到最新笔记 | 确认编辑的是本实例的原总表，文件已经保存，再刷新并检查 `status` |
 | 身份冲突 / xlsx_identity_conflict | 保留原文件和笔记，让 Codex 检查被改动的文献 ID、行顺序或重复行；不要直接删除总表重建 |
 | 表头或工作表缺失 | 恢复原列名及工作表结构后再刷新，系统会保留原工作簿等待处理 |
@@ -131,6 +134,14 @@ $readingBackup = Join-Path $env:USERPROFILE ('Documents\deep-literature-library-
 ```
 
 确认返回 `status` 为 `completed` 并保存备份路径。备份会等待活动任务；若忙或失败，按提示稍后重试。
+
+macOS/Linux 使用平台指南读取的 `reading_root` 和 `reading_python`，运行：
+
+```sh
+"$reading_python" -I -X utf8 -m scientific_reading --data-root "$reading_root/library" library-backup --output "$HOME/deep-literature-library-$(date +%Y%m%d-%H%M%S).zip" --timeout 30
+```
+
+跨平台换机需要完整备份，并用新安装器的 `--library-backup '/备份路径.zip'`（Windows 为 `-LibraryBackup`）恢复到新的安装根。
 
 另一台机器可以在安装时使用 `-LibraryBackup` 将备份恢复到新安装根；具体命令见 [生命周期指南](lifecycle.md#从-a-迁入)。该恢复入口也适用于本工作台生成的完整文献库备份。模型登录与 MinerU Key 需要重新配置。
 

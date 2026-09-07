@@ -1,3 +1,13 @@
+# rc.5：Skill 改名、跨平台 OAuth 与 Excel 占用保护
+
+- Skill 入口和显示名统一为 Deep Literature for Codex；迁移未修改的旧入口，保留定制内容与原实例数据。
+- 安装结束和首次使用主动提醒选择 DSH 原生模型 API 或 Codex OAuth，并配置 MinerU。
+- 修复 OAuth 启动器仍限定 Windows x64 的问题；按 macOS/Linux 的 x64、ARM64 架构解析官方原生程序。
+- Excel/LibreOffice 占用标记存在时保留工作簿，等待保存关闭后再同步；补齐跨平台 Skill 操作说明。
+- 五平台验收新增已安装 Skill 启停、真实 OAuth 未登录状态、三列 Excel 笔记回写及重启重装保留检查。
+
+本人 OAuth、macOS/Linux 桌面表格编辑与模型完整调用仍需实机验收。Luna 已有用户成功报告；Spark、GPT-6 Astra 待后续测试，见 [模型测试记录](model-tests.md)。旧版本附件不覆盖。
+
 # rc.4：macOS / Linux 适配
 
 - 增加 macOS Intel/Apple Silicon、Linux x64/ARM64 的安装、启动、恢复、回退与卸载入口。

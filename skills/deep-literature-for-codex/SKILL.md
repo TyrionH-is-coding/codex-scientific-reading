@@ -29,6 +29,12 @@ sh "<Skill目录>/scripts/workbench.sh" start
 
 脚本还支持 `status`、`stop`、`rollback`、`recover`。关闭标签页不必停止宿主；失败时只读取与错误有关的自有日志段。不得按进程名、端口或陈旧 PID 杀进程。
 
+## 首次使用与配置引导
+
+安装完成或首次打开工作台时，主动说明模型还需要在本实例配置，并给出两个入口：DSH 原生模型 API，或 Codex OAuth。不能因为外层 Codex 已登录，就认定工作台也已接入订阅。用户选择订阅时，在已核验实例的 `url + '/api/codex-oauth/ui'` 打开登录页，说明需要依次点击“使用 ChatGPT 登录”和“打开 OpenAI 授权页”；由本人完成授权。登录成功后，引导在 DSH 选择 `openai-codex` 和账号实际可用模型。已有配置的用户不必重新登录；不要替用户切换计费方式。
+
+需要全文解析时，引导到“设置与状态”保存 MinerU API Token，密钥只在用户自己的页面填写，不发送到聊天。模型与解析状态未经实际核验时，明确报告“待配置/待验证”，不能把安装成功写成全流程可用。
+
 ## 总管理与交接
 
 所有动作通过安装根自带的 `call` 接口，具体合同见 [references/api.md](references/api.md)。将 UTF-8 JSON 请求写入临时文件，再运行：
@@ -37,7 +43,7 @@ sh "<Skill目录>/scripts/workbench.sh" start
 powershell.exe -NoProfile -File '<Skill目录>\scripts\workbench.ps1' call -RequestFile '<请求文件绝对路径>'
 ```
 
-macOS/Linux 的同等调用为 `sh "<Skill目录>/scripts/workbench.sh" call "<请求文件绝对路径>"。JSON 合同和实例校验保持相同。
+macOS/Linux 的同等调用为 `sh "<Skill目录>/scripts/workbench.sh" call "<请求文件绝对路径>"`。JSON 合同和实例校验保持相同。
 
 1. 恢复时先 `tasks` 和 `folders`，必要时 `list`，从实际绑定、任务和资产继续。不要仅凭当前聊天记忆创建第二套主管或重跑解析。
 2. 按用户方向创建/选择分类。`bind` 建立稳定 folderId → sessionId；重命名后仍用原 ID。只通过此入口创建分类管理员。
@@ -49,6 +55,10 @@ macOS/Linux 的同等调用为 `sh "<Skill目录>/scripts/workbench.sh" call "<�
 DSH 的分类工具有宿主和 Python 范围校验；其子会话继承分类。未绑定/归档的会话无法调用工具。不要绕过限制给分类会话 shell、文件编辑、全局库设置或通用浏览器/HTTP 工具。原任务 gate 材料由 `csr_read_job_input` 分页读取。
 
 重启后，`waiting_agent` 应再次调用同 gate 的 `dispatch` 核对原生投递证据；旧回执的 accepted 不能证明消息仍在排队。返回 `dispatch.status=canceled` 表示 DSH 已撤销该排队消息，可在用户已授权继续该任务的范围内用一个新的稳定 retryKey 继续；`uncertain` 则先核对会话和任务，避免重复操作。不要自动轮换重试键。
+
+## Excel 管理
+
+总表位于实例根的 `library/library/scientific-reading.xlsx`。按 [references/excel.md](references/excel.md) 使用当前实例自带 Python 刷新；Windows 用 PowerShell，macOS/Linux 用 shell。打开文件使用宿主实际可用的文件展示能力或系统关联软件，macOS/Linux 不宣称自动选中论文行。只有“个人思考、个人理解程度、用户笔记”三列可以回写；先请用户保存关闭，再刷新并检查 JSON 的 `status`。`pending` 时保留原表并说明占用或身份冲突，不删表重建。备份使用完整文献库备份，单独复制 XLSX 不足以换机。
 
 ## PDF 与模型
 

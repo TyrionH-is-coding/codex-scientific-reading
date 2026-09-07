@@ -7,6 +7,7 @@ import { initializeRoot, isolatedEnvironment, prerequisitePaths, readJson, write
 import { activateRelease, recoverRelease } from './releases.mjs';
 import { restoreNewLibrary } from './library-transfer.mjs';
 import { selectPlatformPins, venvPython, npmCli, directoryLinkType } from './platform.mjs';
+import { setupSteps } from './onboarding.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [requestedRoot, archive, requestedSkills, requestedBackup] = process.argv.slice(2);
@@ -128,5 +129,6 @@ for (const file of ['workbench.ps1', 'uninstall.ps1', 'workbench.sh', 'uninstall
 await fs.copyFile(path.join(source, 'src', 'launcher.mjs'), path.join(root, 'launcher.mjs'));
 await fs.writeFile(path.join(root, '.workbench-node'), node + '\n', { mode: 0o600 });
 const skill = skillsRoot ? await installSkill(path.join(app, 'skills', SKILL_NAME), path.resolve(skillsRoot), root) : null;
+console.error('\n接下来完成首次配置：\n' + setupSteps.join('\n'));
 console.log(JSON.stringify({ ok: true, root, instanceId: instance.instanceId, version: VERSION,
-  candidate: release.candidate, installation: selected.status, skill, migration, start: { node, cli: path.join(app, 'src', 'cli.mjs'), args: ['start', root] } }, null, 2));
+  candidate: release.candidate, installation: selected.status, skill, migration, setupSteps, start: { node, cli: path.join(app, 'src', 'cli.mjs'), args: ['start', root] } }, null, 2));

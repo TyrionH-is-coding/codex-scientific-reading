@@ -40,3 +40,6 @@ jobs:
         run: |
           npm ci
           npm test
+      - name: Real native OAuth startup with a fresh unauthenticated home
+        working-directory: oauth
+        run: npm run test:live-unauthed

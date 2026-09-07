@@ -16,11 +16,11 @@
   "dsh": "0.1.0-rc.7",
   "plugin": {
     "name": "@dsh-external/dsh-scientific-reading",
-    "version": "0.1.0-rc.3",
-    "sha256": "69277b9ca77dde1210236ef4b4da1d38900d62125c63f3911ae4ceaa1e4cbea0",
-    "source": "Cross-platform engine rc.3; bundled with this release",
-    "sourceCommit": "5a1566267fff0b5ef65564ae794ac85f61d7b88c",
-    "url": "https://github.com/TyrionH-is-coding/dsh-scientific-reading/releases/download/v0.1.0-rc.3/dsh-external-dsh-scientific-reading-0.1.0-rc.3.tgz"
+    "version": "0.1.0-rc.4",
+    "sha256": "a4b7f1bb4118204a278dfbc552555ee25758be4e359431aa62b19ade509b1ca3",
+    "source": "Cross-platform engine rc.4; bundled with this release",
+    "sourceCommit": "adecef8ffe667125d13552b219a0e62638ab4f8c",
+    "url": "https://github.com/TyrionH-is-coding/dsh-scientific-reading/releases/download/v0.1.0-rc.4/dsh-external-dsh-scientific-reading-0.1.0-rc.4.tgz"
   },
   "platforms": {
     "darwin-arm64": {

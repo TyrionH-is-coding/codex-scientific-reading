@@ -98,6 +98,8 @@ test('新版源码的 install-skill 可为旧安装单独更新入口', async t 
   });
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.equal(JSON.parse(result.stdout).path, f.target);
+  assert.ok(JSON.parse(result.stdout).setupSteps.some(step => step.includes('/api/codex-oauth/ui')));
+  assert.match(result.stderr, /MinerU/);
   assert.match(await fs.readFile(path.join(f.target, 'SKILL.md'), 'utf8'), /^name: deep-literature-for-codex$/m);
   await assert.rejects(fs.access(previous), { code: 'ENOENT' });
 });

@@ -2,7 +2,7 @@
 
 [返回 README](../README.md)
 
-rc.4 为三个系统提供同一套文献库、OA 全文获取、MinerU 云解析、双语 Reader 和 Excel 总表流程。平台相关的安装器、运行时、密钥保存与文件打开方式分别适配。
+rc.5 延续三个系统的文献库、OA 全文获取、MinerU 云解析、双语 Reader 和 Excel 总表流程，修正 OAuth 的 Windows 限制并更新 Skill 入口。平台相关的安装器、运行时、密钥保存与文件打开方式分别适配。
 
 ## 选择安装包
 
@@ -52,6 +52,8 @@ sh "$HOME/CodexScientificReading/workbench.sh" stop
 `start` 返回 `ok: true`、`status: running` 和当前 `url`。在浏览器打开返回的 URL；端口由本次启动决定。与 Codex 联动时，先让 Codex 检查自己可用的浏览器工具。工作台服务可以独立运行，内置浏览器自动操作还需要 Codex 宿主提供相应工具；没有该工具时使用返回的链接手动打开，不把它报告成已完成内置浏览器验收。
 
 ## 密钥保存在什么地方？
+
+首次启动后还需要选择模型接入。使用订阅时，在实际启动 URL 后加 `/api/codex-oauth/ui`，依次点击“使用 ChatGPT 登录”和“打开 OpenAI 授权页”，本人完成授权后返回 DSH 选择 OpenAI Codex。三个系统都启动各自架构的官方 Codex 可执行文件，凭据保存在实例内，外层 Codex 登录不会自动同步。也可以直接使用 DSH 原生模型 API。
 
 | 系统 | MinerU Token 保存方式 |
 | --- | --- |
