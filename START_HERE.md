@@ -4,8 +4,9 @@
 
 1. 下载并解压 Windows 安装包，运行安装器。
 2. 在 Codex 对话中打开工作台。
-3. 保存 MinerU API Key，并配置工作台自己的模型。
-4. 发送第一篇论文，缺 PDF 时补入原任务。
+3. 按 [MinerU API Key 教程](docs/mineru-api-key.md) 获取并保存 Token，再配置工作台自己的模型。
+4. 发送第一篇论文，由内置 scansci-pdf 尝试获取 OA 全文；缺 PDF 时补入原任务。
 5. 等待正式 Reader 生成并打开阅读。
+6. 按 [Excel 长期管理教程](docs/excel-library.md) 打开总表、记录个人思考与笔记，保存关闭后同步回文献库。
 
-README 提供可直接复制到 Codex 的安装、配置和精读指令，以及手动安装命令和常见问题处理。
+README 提供可直接复制到 Codex 的安装、配置、全文获取、精读与长期管理指令，以及手动安装命令和常见问题处理。
