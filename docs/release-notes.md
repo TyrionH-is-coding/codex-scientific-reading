@@ -1,34 +1,30 @@
-# Codex 文献工作台 0.1.0-rc.1
+# Codex 文献工作台 0.1.0-rc.2
 
-首个 Windows x64 发布候选。用户在 Codex 中管理文献全库，在 Codex 内置浏览器中的 DSH 会话管理单个分类。
+Windows x64 公测候选。修复新用户安装与真实文献精读流程的阻断；保留 rc.1 历史附件。
 
-## 这一版
+## 变化
 
-- 独立安装 Node、Python、DSH 与固定 A 插件，文献库、会话、模型配置和订阅凭据与用户原 DSH 分开。
-- Codex Skill 负责实例核对、分类绑定、题录入库、任务交接与恢复；分类主管使用原生 DSH 工具和模型选择。
-- 自动获取 OA 正文，支持合法取得或手动提供的正文 PDF。重复交接、补 PDF 和重试保留原任务；完成须核对实际 Reader 文件。
-- 分类权限在查询、工具调用、子会话、后台作业和最后写回处校验。移动或归档后，旧任务不能继续写入新分类。
-- 原生 LLM 配置与独立 Codex 订阅登录入口；同账号额度共享，未登录或额度不可用时明确显示。
-- 升级失败恢复旧程序，回退保留当前数据；迁移复用 A 的备份合同，卸载保留文献与用户修改的 Skill。
-- 正常关闭撤销的主管排队消息会在再次核对时显示 canceled；崩溃后从原生持久队列恢复。缺乏证据时显示 uncertain，同一交接不盲目重发。
+- 自动注册自有工作区，默认文献模式；完善启动反馈与安装进度。
+- 保留失败任务原父任务身份；状态工具透传失败原因并保留原生输出格式，后台提交后明确轮询。
+- 隔离中断前的 Codex turn 事件。
+- MinerU 成功调用后持久验证状态，配置补齐后可续接；旧未完成解析事务升级，保留公式并恢复标题层级。
+- full-review-v3 支持最终高亮替换初步标记；同步 Reader 渲染和发布校验，兼容 v2。
+- Windows 状态文件短暂占用重试，重复入库回执保留分类。
 
-文献设置保存 MinerU API Key；固定 Excel 字段支持有限的用户笔记写回。自定义字段、Reader 模板和文献雷达留在 0.2。
+## 下载和安装
 
-## 安装与验证
+下载本 Release 的 win-x64.zip、SHA256SUMS.txt、RELEASE-MANIFEST.json 和 ACCEPTANCE.md。ZIP 已内置配套 A 包；单独 TGZ 供开发和核对。不要使用自动生成的 Source code ZIP 安装。
 
-从公开 prerelease 下载 zip 与 `SHA256SUMS.txt`：https://github.com/TyrionH-is-coding/codex-scientific-reading/releases/tag/v0.1.0-rc.1 。对应源码为 `645d41a19fc879b0dd362245aaf8b03f5961651e`。GitHub 自动生成的 Source code 压缩包不是安装器。
+解压后运行：
 
-解压 zip 后按照 [安装说明](../README.md) 执行安装器，首次使用调用 `$codex-scientific-reading`。程序需联网获取清单中的固定依赖。
+~~~powershell
+powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific-reading.tgz -InstallSkill
+~~~
 
-附件的 SHA 在同一 Release 的 `SHA256SUMS.txt`；zip 内 `BUILD-MANIFEST.json` 包含逐文件源码校验。具体已测组合和未测项目见 `ACCEPTANCE.md`。本候选的安装、离线回归及本地模型工具回合，不代表真实账号授权、网络资源可用性或论文内容已全面验收。
+B/A 的准确源码提交与文件 SHA 见 RELEASE-MANIFEST.json，ZIP 内 BUILD-MANIFEST.json 逐文件校验。
 
-自动化无法取得非 OA 正文时会等待用户提供 PDF。登录、人机验证和个人阅读确认由用户完成。
-# 0.1.0-rc.2 候选修复
+## 已测与边界
 
-首次启动自动注册实例工作区，并在没有用户显式默认选择时使用文献模式。续接保留原父任务身份和范围校验；状态工具遵守 DSH 原生输出合同，显示底层失败原因；提交回执明确区分“已提交后台”与“校验通过”。
+同台 Windows 空目录安装、默认文献模式、分类与去重、PDF 续接、真实 MinerU、订阅 Luna 三批翻译与复核、正式 Reader 发布、HTTP SHA 和重启恢复已验证。最终候选空目录安装约216秒，启动约4.5秒；单次测试，网络和负载影响耗时。
 
-MinerU 真实 API 成功后持久记录验证状态，换 Key 会清除旧验证。补齐配置、额度和超时等待状态的续接。归一化 v4 保留 equation 内容并修复平铺标题层级；未完成的 v3 阅读从已校验原始数据迁移，保留旧解析和批次备份，已完成阅读不自动重写。
-
-修复中断后旧 Codex turn 事件污染新回合，以及重复入库回执丢失分类。Windows 原子状态读写对短暂文件占用有限重试。新增 full-review-v3，让复核的高亮列表成为最终选择，能够删减翻译阶段过多的初步标记；已有 v2 Reader 继续按原合同校验。
-
-rc.1 附件保持原样。rc.2 必须使用配套 A rc.2 包与新的 SHA 清单；真实账号、科学内容和最终 Reader 的验收结果以此候选对应的独立验收记录为准，不能继承下文 rc.1 的结论。
+真实模型流程中有管理员继续及纠错提示，尚未证明全程无人干预。Spark额度、其他 Windows 环境、逐句译文质量不在已完成验收内。没有替用户确认已读。详细记录见 docs/acceptance.md。

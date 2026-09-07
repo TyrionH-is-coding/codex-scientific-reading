@@ -2,10 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { readJson, writeJson, verifyFile, VERSION } from '../src/core.mjs';
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: source, encoding: 'utf8', windowsHide: true }).trim();
+if (execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: source, encoding: 'utf8', windowsHide: true }).trim()) throw new Error('release_requires_clean_tracked_source');
 const destination = path.resolve(process.argv[2]);
 const archive = path.resolve(process.argv[3] || path.join(source, 'inputs', 'scientific-reading.tgz'));
 const pins = await readJson(path.join(source, 'runtime', 'pins.json'));
@@ -42,7 +44,7 @@ async function inventory(directory) {
 }
 await inventory(packageRoot);
 await writeJson(path.join(packageRoot, 'BUILD-MANIFEST.json'), { schema: 1, product: 'codex-scientific-reading', version: VERSION,
-  channel: pins.channel, source: 'reviewable working-tree snapshot; no source commit claimed', pins, files });
+  channel: pins.channel, sourceCommit, pluginSourceCommit: pins.plugin.sourceCommit, pins, files });
 const zip = path.join(destination, packageName + '.zip');
 await new Promise((resolve, reject) => {
   const child = spawn(path.join(process.env.SYSTEMROOT, 'System32', 'tar.exe'), ['-a', '-cf', zip, packageName],
@@ -82,7 +84,7 @@ await writeJson(path.join(destination, 'PACKAGE-VERIFY.json'), { zipSha256: zipS
   extractedRoot, verification: 'Every extracted file SHA matches the source inventory; no extra files.', passed: true });
 const manifest = { schema: 1, channel: pins.channel, version: VERSION, createdAt: new Date().toISOString(),
   artifacts: [{ file: path.basename(zip), sha256: zipSha }, { file: aName, sha256: pins.plugin.sha256 }],
-  sourceCommit: null, sourceSnapshot: 'BUILD-MANIFEST.json inside the B archive',
+  sourceCommit, pluginSourceCommit: pins.plugin.sourceCommit, sourceSnapshot: 'BUILD-MANIFEST.json inside the B archive',
   compatibility: { windows: 'x64, PowerShell 5.1+', node: pins.node.version, python: pins.python.version, dsh: pins.dsh, a: pins.plugin.version, codexCli: '0.146.0' },
   validation: 'See the accompanying acceptance record. Real account authorization and scientific content acceptance must be stated separately.' };
 await writeJson(path.join(destination, 'RELEASE-MANIFEST.json'), manifest);
