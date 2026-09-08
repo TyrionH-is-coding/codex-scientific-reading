@@ -17,6 +17,7 @@
   <a href="#项目简介">项目简介</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="docs/getting-started.md">使用指南</a> ·
+  <a href="#加入交流群">加入交流群</a> ·
   <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues">反馈问题</a>
 </p>
 
@@ -189,6 +190,20 @@ DLC 使用独立 DSH 实例，不自动读取其他 DSH 的配置或外层 Codex
 迁移时备份完整文献库；只复制 Excel 不包含 PDF、Reader 和任务数据。模型授权与 MinerU Key 需要在新机器重新配置。[备份、升级与恢复](docs/lifecycle.md)
 
 </details>
+
+## 加入交流群
+
+欢迎加入 **Deep Literature 用户交流群**，交流安装配置、论文精读和 Excel 文献管理经验，也欢迎分享使用反馈与改进建议。
+
+使用微信扫描下方二维码入群；如需查看大图，点击图片即可。
+
+<p align="center">
+  <a href="docs/media/wechat-community-qr.jpg">
+    <img src="docs/media/wechat-community-qr.jpg" alt="Deep Literature 用户交流群微信入群二维码，2026 年 9 月 15 日前有效" width="360">
+  </a>
+</p>
+
+当前二维码标注 **2026 年 9 月 15 日前有效**。如果二维码已失效或无法入群，请通过 [GitHub Issues](https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues) 提醒我们更新。需要跟踪处理的 Bug，也请在 Issues 中留下复现步骤。
 
 ## 文档与参与
 
