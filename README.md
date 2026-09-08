@@ -14,18 +14,19 @@
 </p>
 
 <p align="center">
+  <a href="#项目简介">项目简介</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="docs/getting-started.md">使用指南</a> ·
-  <a href="docs/platforms.md#从-main-源码测试">Mac 主线测试</a> ·
-  <a href="#版本与路线">版本与路线</a> ·
   <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues">反馈问题</a>
 </p>
 
+## 项目简介
+
 DLC 是一个由 **Codex 统筹、DeepSeek Harness（DSH）承载**的文献工作台。给它 DOI、论文链接或本地 PDF，就可以建立文献记录、获取可用全文、生成双语阅读页，再把证据和自己的思考积累下来。
 
-**Windows · macOS · Linux**，安装器准备独立运行环境。你提供模型账号或 API，以及用于云端解析的 MinerU Key。
+**只需 Codex 订阅 + MinerU 免费 API Key，即可开始。** 支持 Windows、macOS 和 Linux，安装器会准备独立运行环境。
 
-> **已发布：rc.6 公测版。主线：rc.8 开发候选。** 下文的六项个人记录和新设置页对应主线；测试这些改动请使用 [main 安装步骤](docs/platforms.md#从-main-源码测试)。[rc.6 安装包](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6)保持独立。
+**DeepSeek API Key 可选**，用于切换翻译模型；**高校图书馆认证可选**，用于本人有权限访问的非 OA 论文。开放论文和手动导入 PDF 都可以直接开始。
 
 ## DLC 帮你留下什么？
 
@@ -37,6 +38,14 @@ DLC 是一个由 **Codex 统筹、DeepSeek Harness（DSH）承载**的文献工�
 
 **导入论文 → 获取正文 → 双语精读 → 记录与回顾 → 下次接着读。**
 
+### 看看生成的阅读页
+
+下面是此前用《[Attention Is All You Need](https://arxiv.org/abs/1706.03762)》实际生成的 HTML Reader：按章节导航，查看中文译文与英文原文，在正文中阅读图表。
+
+![Attention Is All You Need 实测 HTML Reader：章节目录、阅读导览与中英对照正文](docs/media/attention-reader.jpg)
+
+截图来自既有阅读成果；[配图来源](docs/media/README.md)记录对应文件与截图方式。
+
 ## 快速开始
 
 ### 1. 让 Codex 帮你安装
@@ -47,7 +56,7 @@ DLC 是一个由 **Codex 统筹、DeepSeek Harness（DSH）承载**的文献工�
 请帮我安装 DLC（Deep Literature for Codex）：
 https://github.com/TyrionH-is-coding/deep-literature-for-codex
 
-按我的系统和架构选择 rc.6 Release 安装包，核对 SHA256，
+按我的系统和架构选择最新公开 Release 的安装包，核对 SHA256，
 运行安装器并安装 Skill，然后启动工作台。
 有内置浏览器工具时打开页面；需要账号授权时由我本人完成。
 ```
@@ -55,7 +64,7 @@ https://github.com/TyrionH-is-coding/deep-literature-for-codex
 安装需要联网，无需预装 Node、Python 或 DSH。安装后使用 **`$deep-literature-for-codex`** 打开和管理工作台；新安装的 Skill 需要在新对话中使用。
 
 <details>
-<summary><strong>手动安装，或测试 main 的 rc.8 修复</strong></summary>
+<summary><strong>手动安装与源码测试</strong></summary>
 
 从 [Releases](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases) 下载与你的系统和架构对应的压缩包，核对 `SHA256SUMS.txt`，解压后进入安装包目录。
 
@@ -85,14 +94,18 @@ sh ./install.sh --plugin-archive ./inputs/scientific-reading.tgz --install-skill
 
 ### 2. 配置模型与解析服务
 
-打开工作台的 **“设置与状态”**，完成两项配置：
+打开工作台的 **“设置与状态”**，连接 Codex 订阅并保存 MinerU Key：
 
 | 配置 | 用途 | 如何开始 |
 | --- | --- | --- |
-| **MinerU API Key** | 将 PDF 解析成正文、图表与公式 | 从自己的 MinerU 账号取得 Token，在“全文解析”中保存。[配置教程](docs/mineru-api-key.md) |
-| **模型接入** | 翻译、导读与讨论 | 使用 DSH 原生模型 API，或打开工作台自己的 Codex 订阅入口，由本人授权后选择可用模型。[操作步骤](docs/getting-started.md#2-选择用于翻译的模型) |
+| **Codex 订阅** | 翻译、导读与讨论 | 打开工作台自己的 Codex 订阅入口，完成本人授权；首次使用推荐选择 **GPT-5.6 Luna**。[操作步骤](docs/getting-started.md#2-选择用于翻译的模型) |
+| **MinerU 免费 API Key** | 将 PDF 解析成正文、图表与公式 | 在 MinerU 官网注册并取得 Token，在“全文解析”中保存。[配置教程](docs/mineru-api-key.md) |
 
-工作台需要自己的模型配置；外层 Codex 登录不会自动同步。模型与解析服务使用你自己的账号额度，保存 Key 后还需通过真实任务确认服务可用。
+MinerU 当前提供每天 **1,000 页最高优先级解析额度**，超出后降低优先级；单文件最多 **200 页、200 MB**。按每篇 10–20 页估算，约相当于每天 50–100 篇论文的高优先级解析。额度以账号页面为准，以上信息核对于 2026-09-08。[官方 API 说明](https://mineru.net/apiManage/docs)
+
+翻译默认推荐 **Luna**；也可在模型选择器切换 **GPT-5.6 Terra / Sol**，或使用自己的 **DeepSeek API Key** 选择 **V4 Flash / Pro**。实际翻译沿用会话选中的模型，可用选项以账号返回为准。
+
+工作台的订阅接入需要单独授权，与外层 Codex 使用同一账号时共享额度。高校认证只在需要获取受订阅保护的论文时，由本人在浏览器中完成。
 
 ### 3. 读第一篇论文
 
@@ -144,15 +157,11 @@ flowchart LR
 
 已有 DSH、希望单独使用文献插件，可以查看 [DSH Scientific Reading](https://github.com/TyrionH-is-coding/dsh-scientific-reading)。该插件只自动获取 OA 全文或接收本地 PDF；DLC 中的机构访问由外层 Codex 配合可用浏览器与本人授权处理。
 
-## 版本与路线
+## 后续计划
 
-| 版本 | 状态与范围 |
-| --- | --- |
-| **rc.6 公测版** | 已发布跨平台安装包；包含文献入库、OA 获取、MinerU、双语 Reader 和 Excel。[下载](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6) |
-| **main / rc.8** | 六项个人记录与安全同步、新设置页、模型进程恢复、翻译草稿保留与有限补试。正在补齐 Mac 实机测试。[源码测试](docs/platforms.md#从-main-源码测试) · [改动说明](docs/release-engineering-review.md) |
-| **v0.2 待做** | 每篇文献一个 chat、多选 chat 总结、Figure 关联讨论、Excel 字段与 HTML 模板自定义、主题色、文献雷达。[分类清单](docs/roadmap-v0.2.md) |
+v0.2 计划加入每篇文献一个 chat、多选 chat 总结、Figure 关联讨论、Excel 字段与 HTML 模板自定义、主题色和文献雷达。[查看分类清单](docs/roadmap-v0.2.md)
 
-当前 v0.1 使用分类管理会话。跨平台 CI 和安装检查不能代替本人 OAuth、真实长文翻译及 Excel / Numbers / LibreOffice 桌面编辑回写验收；任务仍可能需要继续或纠错提示，译文与科学结论需要结合原文判断。[验证记录](docs/acceptance.md) · [模型测试](docs/model-tests.md)
+安装包与主线改动的区别见[平台指南](docs/platforms.md#从-main-源码测试)，更新详情见[发布说明](docs/release-notes.md)。实际使用中仍可能需要继续或纠错提示，译文与结论请结合原文判断。[验证记录](docs/acceptance.md) · [模型测试](docs/model-tests.md)
 
 ## 常见问题
 

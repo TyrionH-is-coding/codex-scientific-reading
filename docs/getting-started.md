@@ -2,15 +2,17 @@
 
 [返回项目首页](../README.md) · [跨平台安装](platforms.md) · [Excel 长期管理](excel-library.md)
 
-DLC 是 Deep Literature for Codex 的简称。本文保留安装、首次配置、论文精读、Excel 同步和排错的完整步骤。管理能力对应当前 main；已发布安装包与开发候选的区别见[首页版本说明](../README.md#版本与路线)。
+DLC 是 Deep Literature for Codex 的简称。本文保留安装、首次配置、论文精读、Excel 同步和排错的完整步骤。管理能力对应当前 main；已发布安装包与开发候选的区别见[平台指南](platforms.md#从-main-源码测试)。
 
 ## 使用前准备
 
 | 需要什么 | 用来做什么 |
 | --- | --- |
 | Windows x64、macOS 或 Linux + Codex 环境 | 安装和管理工作台；内置浏览器联动需要 Codex 提供页面操作工具，平台与架构见 [兼容性指南](platforms.md) |
-| 工作台自己的模型配置 | 翻译和生成导读：使用支持的 Codex 订阅登录，或配置模型 API |
-| MinerU API Key | 将 PDF 解析成正文、图表和公式；[从注册到配置的教程](mineru-api-key.md) |
+| Codex 订阅 | 管理文献，并在工作台内授权用于翻译和导读；首次使用推荐选择 GPT-5.6 Luna |
+| MinerU 免费 API Key | 将 PDF 解析成正文、图表和公式；[获取步骤与免费额度](mineru-api-key.md) |
+| DeepSeek API Key（可选） | 想用 DeepSeek V4 Flash / Pro 翻译时再配置 |
+| 高校图书馆认证（可选） | 获取本人有访问权限的非 OA 论文；开放论文或手动导入 PDF 不需要 |
 | Excel 桌面版（使用总表时） | 打开文献总表、筛选和编辑个人记录；不装 Excel 也能入库和使用 Reader |
 
 安装需要联网，**不需要预装 Node、Python、DSH 或 scansci-pdf**，安装器会准备依赖。日常使用不用单独运行 scansci-pdf 命令，也不用另装它的 MCP 服务。
@@ -96,11 +98,15 @@ powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific
 
 1. 对 Codex 说：“请打开这个工作台的 Codex 订阅登录与额度页面。”
 2. 在实际工作台 URL 后加 `/api/codex-oauth/ui` 打开登录页，依次点击“使用 ChatGPT 登录”和“打开 OpenAI 授权页”，由你本人完成官方授权。外层 Codex 已登录不代表本实例已登录。
-3. 授权成功后，返回工作台，在会话的**模型选择器**中选择 `openai-codex` 提供方及可用模型。
+3. 授权成功后，返回工作台，在会话的**模型选择器**中选择 `openai-codex` 提供方，首次使用推荐选择 **GPT-5.6 Luna（`gpt-5.6-luna`）**。
 
 外层 Codex 已登录，不代表工作台也已登录。这里需要独立授权，同一账号的额度仍然共享。模型是否可用，以登录后实际显示的列表和额度为准。
 
-**使用模型 API：** 在工作台的 **Settings（设置）** 中配置你的模型服务，再在会话模型选择器中选中它。配置的是工作台内的模型，不是外层 Codex 对话使用的模型。
+**可选模型：** 日常翻译默认推荐 Luna；你也可以在同一选择器中改选 **GPT-5.6 Terra（`gpt-5.6-terra`）** 或 **GPT-5.6 Sol（`gpt-5.6-sol`）**。当前实现沿用会话已选模型，不会在登录后自动切到 Luna，也不会覆盖你已有的选择。
+
+**DeepSeek API 可选：** 想使用 **DeepSeek V4 Flash / Pro** 时，在工作台的 **Settings（设置）** 中配置自己的 DeepSeek API Key，再在会话模型选择器中选中它。配置的是工作台内的模型，不是外层 Codex 对话使用的模型；DeepSeek API 使用独立的 API 额度，不使用 Codex 订阅额度。
+
+模型可见性与完整精读实测分别记录在[模型测试清单](model-tests.md)，可选不代表所有模型均已完成本项目回归。
 
 ## 第三步：获取并精读第一篇论文
 
