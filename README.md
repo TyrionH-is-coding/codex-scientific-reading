@@ -7,9 +7,10 @@
 <p align="center"><strong>在 Codex 里读论文，把理解留在自己的文献库。</strong></p>
 
 <p align="center">
-  <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/actions/workflows/ci.yml"><img src="https://github.com/TyrionH-is-coding/deep-literature-for-codex/actions/workflows/ci.yml/badge.svg?branch=main" alt="源码 CI"></a>
-  <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/actions/workflows/platform-install.yml"><img src="https://github.com/TyrionH-is-coding/deep-literature-for-codex/actions/workflows/platform-install.yml/badge.svg?branch=main" alt="跨平台安装检查"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-BSD--3--Clause-176b63" alt="BSD-3-Clause"></a>
+  <a href="docs/platforms.md#windows"><img src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square" alt="Windows x64"></a>
+  <a href="docs/platforms.md#macos--linux"><img src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-555555?style=flat-square" alt="macOS Apple Silicon / Intel"></a>
+  <a href="docs/platforms.md#macos--linux"><img src="https://img.shields.io/badge/Linux-x64%20%7C%20ARM64-555555?style=flat-square" alt="Linux x64 / ARM64"></a>
+  <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6"><img src="https://img.shields.io/badge/Release-v0.1.0--rc.6-176b63?style=flat-square" alt="Release v0.1.0-rc.6"></a>
 </p>
 
 <p align="center">
