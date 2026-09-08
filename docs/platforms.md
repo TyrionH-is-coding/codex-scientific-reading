@@ -42,7 +42,7 @@ sh "$HOME/CodexScientificReading/workbench.sh" start
 
 ## Windows
 
-按 [README 的 Windows 安装步骤](../README.md#也可以手动安装) 下载、核对 SHA256、解压后执行：
+按[使用指南中的 Windows 安装步骤](getting-started.md#也可以手动安装)下载、核对 SHA256、解压后执行：
 
 ```powershell
 powershell.exe -NoProfile -File .\install.ps1 -PluginArchive .\inputs\scientific-reading.tgz -InstallSkill
