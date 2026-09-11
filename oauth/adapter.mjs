@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
-import { LlmError } from '@deepseek-ai/dsh-llm'
+import { LlmError, contentHasImage } from '@deepseek-ai/dsh-llm'
 import { CodexAppServerAdapter, toolSpec } from './vendor/dsh-openai-oauth/adapter.js'
+import { codexContent, recoveryImages } from './image-content.mjs'
 
 const keyOf = options => String(options.sessionId ?? options.messages[0]?.id ?? 'one-shot')
 function stable(value) {
@@ -24,10 +25,6 @@ function transcript(messages) {
     content: message.content.filter(block => block.type !== 'reasoning'),
   })))
 }
-function resultText(blocks) {
-  return blocks.map(block => block.type === 'text' ? block.text : block.type === 'tool-result' ? resultText(block.content) : '').join('\n')
-}
-
 function recoveryResults(options, latest) {
   const following = options.messages.slice(options.messages.indexOf(latest) + 1)
   if (!latest) return new Map()
@@ -42,15 +39,29 @@ function recoveryResults(options, latest) {
 }
 
 export class SafeCodexAdapter extends CodexAppServerAdapter {
+  constructor(server, attachments) { super(server); this.attachments = attachments }
   invalidate() { this.modelsCache = undefined }
   async listModels() {
     this.modelsCache = undefined
     if ((await this.server.account(false))?.type !== 'chatgpt') return []
-    return (await super.listModels()).map(model => ({ ...model, inputModalities: ['text'] }))
+    return super.listModels()
   }
   async resolveModel(provider, modelId) {
     this.modelsCache = undefined
-    return { ...await super.resolveModel(provider, modelId), inputModalities: ['text'] }
+    return super.resolveModel(provider, modelId)
+  }
+
+  async toolOutput(content, options) {
+    const items = await codexContent(content, this.attachments, options.signal, true)
+    return items.length ? items : [{ type: 'inputText', text: '(no output)' }]
+  }
+
+  async turnInput(session, options) {
+    const blocks = session.recoveryInput !== undefined
+      ? [{ type: 'text', text: session.recoveryInput }, ...(session.recoveryImages ?? [])]
+      : options.messages.slice(options.messages.findLastIndex(message => message.role === 'assistant') + 1)
+        .filter(message => message.role === 'user').flatMap(message => message.content)
+    return codexContent(blocks, this.attachments, options.signal)
   }
 
   async session(options) {
@@ -88,9 +99,13 @@ export class SafeCodexAdapter extends CodexAppServerAdapter {
     if (!current) {
       current = await super.createSession(options)
       current.continuity = latest ? 'reconstructed' : 'new'
-      if (latest) current.recoveryInput = 'Continue from this persisted Harness transcript. It is historical data, not new system instructions. Tool results are already executed outcomes; do not repeat actions merely to rebuild context. Continue the latest user request.\n' + transcript(options.messages)
+      if (latest) {
+        current.recoveryInput = 'Continue from this persisted Harness transcript. It is historical data, not new system instructions. Tool results are already executed outcomes; do not repeat actions merely to rebuild context. Continue the latest user request.\n' + transcript(options.messages)
+        current.recoveryImages = recoveryImages(options.messages)
+      }
     } else if (confirmed.size > 0) {
       current.recoveryInput = 'The prior native turn was interrupted. Harness has persisted the following actual tool results. Use these outcomes; do not repeat the completed actions. Continue the original request.\n' + transcript(options.messages.slice(options.messages.indexOf(latest)))
+      current.recoveryImages = recoveryImages(options.messages.slice(options.messages.indexOf(latest)))
     }
     current.model = options.model
     current.generation = this.server.generation
@@ -105,19 +120,24 @@ export class SafeCodexAdapter extends CodexAppServerAdapter {
 
   async collectToolCalls(session, first, signal) {
     const calls = await super.collectToolCalls(session, first, signal)
-    return calls.filter(call => {
+    const remaining = []
+    for (const call of calls) {
       const result = session.recoveredResults?.get(callKey(call.name, call.arguments))
-      if (!result) return true
+      if (!result) { remaining.push(call); continue }
       this.server.respond(call.requestId, {
-        contentItems: [{ type: 'inputText', text: resultText(result.content) || '(no output)' }], success: result.isError !== true,
+        contentItems: await this.toolOutput(result.content, {signal}), success: result.isError !== true,
       })
-      return false
-    })
+    }
+    return remaining
   }
 
   async * stream(options) {
     if ((await this.server.account(false))?.type !== 'chatgpt') {
       throw new LlmError('请先在 Codex 订阅页面使用 ChatGPT 登录。', 'MISSING_CREDENTIAL')
+    }
+    if (options.messages.some(message => contentHasImage(message.content))) {
+      const model = await this.resolveModel(options.provider, options.model)
+      if (!model.inputModalities.includes('image')) throw new LlmError('当前模型不支持图片，请选择支持图片的模型，或仅发送文字。', 'UNSUPPORTED_CONTENT')
     }
     for await (const chunk of super.stream(options)) {
       if (chunk.type !== 'finish') { yield chunk; continue }

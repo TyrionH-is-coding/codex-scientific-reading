@@ -111,3 +111,14 @@ test('生命周期日志轮转且不写入 RPC、标准错误或凭据内容', a
   assert.ok(!log.includes('SECRET') && !log.includes('fixture/noise'))
   assert.equal((await readFile(join(stateRoot, 'app-server-events.jsonl.1'))).length, 65536)
 })
+
+
+test('模型发现读取全部分页，保留后续页的 Astra', async () => {
+  const requests = []
+  const models = await AppServer.prototype.models.call({request:async (method,params) => {
+    requests.push({method,params})
+    return params.cursor ? {data:[{model:'gpt-6-astra'}],nextCursor:null} : {data:[{model:'gpt-5.6-sol'}],nextCursor:'page-2'}
+  }})
+  assert.deepEqual(models.map(model=>model.model),['gpt-5.6-sol','gpt-6-astra'])
+  assert.equal(requests[1].params.cursor,'page-2')
+})

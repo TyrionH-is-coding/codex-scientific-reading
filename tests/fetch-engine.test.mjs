@@ -48,9 +48,10 @@ test('本地引擎包 SHA 不匹配时拒绝使用并保留文件', async t => {
   assert.equal(await fs.readFile(f.target, 'utf8'), 'damaged engine fixture');
 });
 
-test('缺少本地引擎包时仍下载并校验固定版本', async t => {
+test('未发布候选缺少随包引擎时明确失败，不猜测 Release 地址', async t => {
   const f = await fixture(t);
   const result = f.run(true);
-  assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(await fs.readFile(f.target), await fs.readFile(archive));
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /engine_unpublished_candidate_requires_bundled_archive/);
+  await assert.rejects(fs.access(f.target), { code: 'ENOENT' });
 });

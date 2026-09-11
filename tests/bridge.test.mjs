@@ -17,11 +17,13 @@ test('分类工具不能清除翻译补试暂停，普通续接仍按实际分�
   await fs.writeFile(path.join(plugin, 'package.json'), JSON.stringify({ type: 'module', main: 'index.mjs' }));
   await fs.writeFile(path.join(plugin, 'index.mjs'), `
     export const withEngineScope = (scope, next) => next();
-    export async function engineJson(config, args) { config.calls.push(args); return {ok:true,json:config.job}; }
+    export const withoutEngineScope = next => next();
+    export const createNativeRpc = () => () => { throw new Error('fixture_rpc_unavailable') };
+    export async function engineJson(config, args, input) { config.calls.push(args); return {ok:true,json:args[0] === 'paper-chat' ? {paper_id:input.session_id==='bound'?'paper1':null} : config.job}; }
   `);
   await fs.writeFile(path.join(root, '.workbench.json'), JSON.stringify({ instanceId: 'fixture' }));
   await fs.writeFile(path.join(root, 'installation.json'), JSON.stringify({ dsh: path.join(root, 'host.mjs') }));
-  await fs.writeFile(path.join(root, 'state', 'handoff.json'), JSON.stringify({ schema: 1, instanceId: 'fixture',
+  await fs.writeFile(path.join(root, 'state', 'handoff.json'), JSON.stringify({ schema: 2, instanceId: 'fixture',
     bindings: { one: { sessionId: 'bound', folderId: 'f1', active: true } }, children: {}, tasks: {} }));
   const handlers = new Map();
   const ctx = { on: (name, handler) => handlers.set(name, handler),
@@ -38,7 +40,9 @@ test('分类工具不能清除翻译补试暂停，普通续接仍按实际分�
   engineConfig.job.detail.reason_code = 'translate_full_read';
   await execute(request, () => entered++);
   assert.equal(entered, 1);
-  assert.ok(engineConfig.calls.every(args => args[0] === 'job-status' && args[2] === request.arguments.job_id));
+  assert.ok(engineConfig.calls.filter(args => args[0] !== 'paper-chat').every(args => args[0] === 'job-status' && args[2] === request.arguments.job_id));
+  await assert.rejects(execute({ ...request, agent: { session: { id: 'unbound' } } }, () => entered++), /scope_command_forbidden/);
+  assert.equal(entered, 1);
 });
 
 test('原生交接证据识别持久队列被正常停止撤销，并优先使用实际 pending 或 delivered', async () => {
@@ -46,7 +50,7 @@ test('原生交接证据识别持久队列被正常停止撤销，并优先使�
   assert.equal(typeof inspectDispatchEvidence, 'function');
   const message = (id, rpcId) => ({ id, source: { kind: 'user', rpcId } });
   const ours = message('ours', 'rpc'), other = message('other', 'another');
-  const agent = { inbox: { nextTurn: [], nextStep: [] }, session: { header: {}, events: [
+  const agent = { inbox: { nextTurn: [], nextStep: [] }, session: { snapshotEvents(from = 0) { return this.events.slice(from); }, firstLiveSeq: 0, events: [
     { type: 'agent/inbox/spliced', data: { target: 'next-turn', start: 0, inserted: [ours, other] } },
     { type: 'agent/inbox/spliced', data: { target: 'next-turn', start: 0, removedCount: 2, inserted: [], outcome: 'canceled' } },
   ] } };
@@ -65,7 +69,7 @@ test('领取后尚未追加 user/message 或不完整取消记录仅能判为 un
   const ours = { id: 'ours', source: { kind: 'user', rpcId: 'rpc' } };
   const insert = { type: 'agent/inbox/spliced', data: { target: 'next-step', start: 0, inserted: [ours] } };
   const remove = { type: 'agent/inbox/spliced', data: { target: 'next-step', start: 0, removedCount: 1, inserted: [] } };
-  const agent = { inbox: { nextTurn: [], nextStep: [] }, session: { header: {}, events: [insert, remove] } };
+  const agent = { inbox: { nextTurn: [], nextStep: [] }, session: { snapshotEvents(from = 0) { return this.events.slice(from); }, firstLiveSeq: 0, events: [insert, remove] } };
   assert.equal(inspectDispatchEvidence(agent, 'rpc'), 'uncertain');
   agent.session.events.push(insert, { ...remove, data: { ...remove.data, outcome: 'canceled' } });
   assert.equal(inspectDispatchEvidence(agent, 'rpc'), 'uncertain');
@@ -73,21 +77,20 @@ test('领取后尚未追加 user/message 或不完整取消记录仅能判为 un
   assert.equal(inspectDispatchEvidence(agent, 'rpc'), 'uncertain');
 });
 
-test('实际会话身份决定工具范围，不能通过参数声明自己是其他分类', () => {
-  const service = { scopeFor: id => id === 'bound' ? { scopeFolderId: 'f1' } : null };
+test('原生同步 guard 只返回字符串或 undefined，拒绝单篇工具集之外的操作', () => {
   const agent = { session: { id: 'bound' } };
   for (const name of ['bash', 'str_replace_editor', 'sr_attach_pdf', 'sr_download_papers', 'sr_scansci_config', 'sr_setup']) {
-    assert.ok(categoryGuard(service, { name, agent, arguments: { scopeFolderId: 'f1' } }));
+    assert.equal(typeof categoryGuard({ name, agent, arguments: { scopeFolderId: 'f1' } }), 'string');
   }
-  assert.equal(categoryGuard(service, { name: 'sr_job_status', agent }), undefined);
-  assert.ok(categoryGuard(service, { name: 'sr_job_status', agent: { session: { id: 'unbound' } } }));
+  // A Promise is a denial object to the native synchronous guard and cannot be serialized.
+  assert.equal(categoryGuard({ name: 'sr_job_status', agent }), undefined);
 });
 
 test('取消只移除本任务排队消息，不取消同分类正在处理的另一篇论文', () => {
   let canceled = 0; const removed = [];
   const agent = { status: 'running', cancel: () => canceled++,
     inbox: { nextStep: [], nextTurn: [{ id: 'pending1', source: { kind: 'user', rpcId: 'ours' } }], remove: id => removed.push(id) },
-    session: { events: [{ type: 'turn/start', data: { turn: 1 } }, { type: 'user/message', data: { source: { kind: 'user', rpcId: 'other' } } }] } };
+    session: { snapshotEvents(from = 0) { return this.events.slice(from); }, events: [{ type: 'turn/start', data: { turn: 1 } }, { type: 'user/message', data: { source: { kind: 'user', rpcId: 'other' } } }] } };
   const task = { dispatches: { a: { rpcId: 'ours' } } };
   assert.equal(cancelOwnedDispatch(agent, task).turn, 'not_targeted');
   assert.deepEqual(removed, ['pending1']); assert.equal(canceled, 0);
@@ -99,7 +102,7 @@ test('上一任务结束后不能取消尚未追加消息的新 turn；领取记
   let canceled = 0;
   const agent = { status: 'running', cancel: () => canceled++,
     inbox: { nextStep: [], nextTurn: [], remove: () => assert.fail('queue is empty') },
-    session: { events: [{ type: 'turn/start', data: { turn: 1 } },
+    session: { snapshotEvents(from = 0) { return this.events.slice(from); }, events: [{ type: 'turn/start', data: { turn: 1 } },
       { type: 'user/message', data: { source: { kind: 'user', rpcId: 'ours' } } },
       { type: 'turn/end', data: { turn: 1 } }, { type: 'turn/start', data: { turn: 2 } }] } };
   const task = { dispatches: { a: { rpcId: 'ours' } } };
@@ -114,7 +117,7 @@ test('上一任务结束后不能取消尚未追加消息的新 turn；领取记
 test('同一 turn 混入其他任务或手动消息时只撤回队列，不中断共享 turn', () => {
   const agent = { status: 'running', cancel: () => assert.fail('another prompt would be interrupted'),
     inbox: { nextStep: [], nextTurn: [], remove: () => {} },
-    session: { events: [{ type: 'turn/start', data: { turn: 3 } },
+    session: { snapshotEvents(from = 0) { return this.events.slice(from); }, events: [{ type: 'turn/start', data: { turn: 3 } },
       { type: 'user/message', data: { source: { kind: 'user', rpcId: 'other' } } },
       { type: 'user/message', data: { source: { kind: 'user', rpcId: 'ours' } } }] } };
   const task = { dispatches: { a: { rpcId: 'ours' } } };
@@ -199,14 +202,19 @@ test('job-status 失败时返回完整 JSON，并把 detail.error 作为可识�
 
 test('完成以真实 Reader HTTP 字节和 SHA 为准，RPC 校验完整回执', async t => {
   const html = '<!doctype html><p>正式 Reader</p>';
-  let corrupt = false;
+  let corrupt = false, styled = false, badBase = false;
   const server = http.createServer(async (req, res) => {
     if (req.url.startsWith('/api/')) {
       const chunks = []; for await (const chunk of req) chunks.push(chunk);
       const input = JSON.parse(Buffer.concat(chunks));
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ type: 'server-response', rpcId: corrupt ? 'wrong' : input.rpcId, result: { ok: true, value: { accepted: true } } }));
-    } else { res.setHeader('Content-Type', 'text/html'); res.end(corrupt ? 'login required' : html); }
+    } else {
+      res.setHeader('Content-Type', 'text/html');
+      const display=styled ? html.replace('<p>','<p style="color:navy">') : html;
+      if(styled){res.setHeader('x-sr-reader-base-sha256',badBase ? '0'.repeat(64) : sha256);res.setHeader('x-sr-reader-display-sha256',createHash('sha256').update(display).digest('hex'));}
+      res.end(corrupt ? 'login required' : display);
+    }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => { server.closeAllConnections(); server.close(); });
@@ -214,6 +222,13 @@ test('完成以真实 Reader HTTP 字节和 SHA 为准，RPC 校验完整回执'
   const sha256 = createHash('sha256').update(html).digest('hex');
   const engine = async () => ({ manifest: { reader_sha256: sha256 } });
   assert.equal((await verifyReader(engine, url, 'p', {})).sha256, sha256);
+  styled=true;
+  const appearance=await verifyReader(engine,url,'p',{});
+  assert.equal(appearance.sha256,sha256);
+  assert.notEqual(appearance.displaySha256,sha256);
+  badBase=true;
+  await assert.rejects(verifyReader(engine,url,'p',{}),/reader_http_mismatch/);
+  badBase=false;
   assert.equal((await dshRpc(url, 'session.prompt', {})).accepted, true);
   corrupt = true;
   await assert.rejects(verifyReader(engine, url, 'p', {}), /reader_http_mismatch/);

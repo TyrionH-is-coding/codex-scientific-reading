@@ -205,7 +205,18 @@ export class AppServer {
   }
 
   async account(refreshToken = false) { return (await this.request('account/read', { refreshToken })).account ?? null }
-  async models() { return (await this.request('model/list', {})).data ?? [] }
+  async models() {
+    const models = [], seen = new Set()
+    let cursor
+    do {
+      const page = await this.request('model/list', { ...(cursor ? { cursor } : {}) })
+      models.push(...(page.data ?? []))
+      cursor = page.nextCursor
+      if (cursor && seen.has(cursor)) throw new Error('Codex model list cursor repeated')
+      if (cursor) seen.add(cursor)
+    } while (cursor)
+    return models
+  }
   async startThread(input) {
     const result = await this.request('thread/start', { ...input, cwd: this.home, allowProviderModelFallback: false })
     if (typeof result.thread?.id !== 'string') throw new Error('Codex returned no thread id')

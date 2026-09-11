@@ -17,6 +17,7 @@ let state = { ...instance, version: installed.version, candidate: installed.cand
 let host;
 let stopping;
 let hostClosed;
+let browserUrl;
 const stateFile = path.join(root, 'state', 'last-run.json');
 
 async function shutdown() {
@@ -56,7 +57,7 @@ const control = net.createServer(socket => {
         const result = await shutdown();
         socket.end(JSON.stringify(result));
         control.close();
-      } else if (message.command === 'status') socket.end(JSON.stringify(state));
+      } else if (message.command === 'status') socket.end(JSON.stringify({ ...state, ...(state.status === 'running' && browserUrl ? { browserUrl } : {}) }));
       else socket.end(JSON.stringify({ error: 'unknown_command' }));
     } catch { socket.end(JSON.stringify({ error: 'control_failed' })); }
   });
@@ -102,6 +103,7 @@ control.listen(pipeName(root), async () => {
       if (message?.type !== 'workbench-ready' || message.launchId !== state.launchId ||
           message.instanceId !== state.instanceId || message.pid !== host.pid || stopping) return;
       state = { ...state, status: 'running', pid: host.pid, url: message.url };
+      browserUrl = message.browserUrl;
       await writeJson(stateFile, state);
     });
     host.on('error', error => { state = { ...state, status: 'failed', error: `host_spawn: ${error.code}` }; });

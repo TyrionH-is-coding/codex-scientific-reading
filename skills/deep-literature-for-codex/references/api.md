@@ -1,4 +1,4 @@
-# 0.1 机器接口
+# v0.2 机器接口
 
 入口：`workbench.ps1 call -RequestFile <UTF-8 JSON>`。请求格式 `{ "action": "...", "payload": { ... } }`。脚本自行验证运行实例并填入 instanceId。成功返回 `{ "ok": true, "value": ... }`；失败为 `ok:false,error`，不能只看 HTTP 状态。
 
@@ -6,9 +6,9 @@
 | --- | --- | --- |
 | folders | `{}` | A 的 folder 数组 |
 | folder_create | `{name}` | 创建分类 |
-| folder_rename | `{folderId,name}` | 改名并同步主管标题，ID 不变 |
+| folder_rename | `{folderId,name}` | 分类改名，论文与 chat 身份不变 |
 | folder_archive | `{folderId,archived:true/false}` | 归档范围并阻止旧 worker 写回；恢复不自动续跑旧任务 |
-| bind | `{folderId}` | 稳定 `{folderId,sessionId,active,name}` |
+| bind | `{paperId}` | 稳定 `{paperId,folderId,sessionId,active,name}`；分类移动后继续原 chat |
 | ingest | `{metadata:{doi,title,authors,year,journal,pmid,source_url,abstract_en}}` | A 原生入库回执；authors 为字符串数组，year 为整数，未掌握字段可省略 |
 | item | `{paperId}` | A 单篇事实 |
 | list | `{folderId?,query?,page?,pageSize?,readingState?,personalRecentDays?,orderBy?}` | 全库或指定分类分页；按人工进度、个人维护时间筛选 |
@@ -17,7 +17,7 @@
 | excel_open | `{paperId}` | 打开当前工作簿，返回行号与 selected |
 | environment | `{}` | 本机状态；library 中提供最近 Excel 导出回执 |
 | move | `{paperId,folderId,tags?}` | A 分类操作，confidence 固定为用户显式选择 |
-| submit | `{idempotencyKey,folderId,paperId,runAgent?}` | 稳定 taskId、jobId 和当前状态；runAgent 默认 true |
+| submit | `{idempotencyKey,paperId,folderId?,runAgent?}` | 稳定 taskId、jobId 和当前状态；runAgent 默认 true；folderId 仅校验当前归属 |
 | tasks | `{}` | 绑定和所有交接任务，从 A 重新读取状态 |
 | task | `{taskId}` | 单任务实际状态，completed 时带正式 Reader URL/SHA |
 | dispatch | `{taskId,retryKey?}` | 将 waiting_agent 原任务投递到主管；同 gate 不重复投递。模型失败/取消后明确重试可使用新稳定 retryKey，同一重试不换键 |
@@ -25,6 +25,19 @@
 | attach | `{taskId,idempotencyKey,pdf,sourceType}` | 真实绝对文件路径；来源 manual/codex_authorized；续接同篇同任务 |
 | cancel | `{taskId}` | 只移除本任务排队提示，确认当前 turn 属于本任务才取消；不声称 A detached worker 已停止 |
 | reader | `{paperId}` | 验证 Reader 清单及 HTTP SHA 后返回链接 |
+| chats_select | `{question,selection:[{paper_id}]}` | 保存用户明确选择的跨篇总结范围 |
+| chats_selection | `{}` | 当前保存的问题和范围 |
+| chats_read | `{selection?,question?}` | 读取所选原生历史与原文证据；续页参数见 v02 参考 |
+| chats_legacy | `{}` | 旧分类讨论和旧单篇 Review 入口 |
+| chats_legacy_read | `{session_id,beforeSeq?,textOffset?,pageSha256?}` | 登记旧会话的只读历史，保留混合讨论身份 |
+| figure_discuss | `{paper_id,asset_id,source_pdf_sha256,question?,text_only?}` | 真实图像与来源上下文提交到本篇 chat，返回当前图上下文与投递状态 |
+| model_run | `{step,input}` | 按设置中该步骤的模型和思考深度生成文字，返回实际 provider/model/reasoningEffort/text；input 包含任务、来源及输出合同，最多 120000 字符 |
+| library_views | `{action,...}` | 研究字段、Excel/Reader 方案、主题色；详见 v02 参考 |
+| radar | `{action,...}` | 方向草稿/确认、发现、评估、反馈与明确纳入；详见 v02 参考 |
+| acquisition | `{taskId,event,expectedRevision,idempotencyKey,...}` | 获取全文的持久状态机；详见 download 参考 |
+| acquisition_download | `{taskId,...}` | 从已授权标签页传输 PDF，详见 download 参考 |
+
+新增合同与例子见 [v02.md](v02.md)。不要把旧 `{folderId}` bind 请求继续用于 v0.2。
 
 例如先创建分类：
 

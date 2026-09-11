@@ -8,7 +8,9 @@ import { directoryLinkType } from './platform.mjs';
 import { prepareLocalSocket } from './local-socket.mjs';
 
 const transitionFile = root => path.join(root, 'state', 'release-transition.json');
-const forwardMigration = (previous, candidate) => previous?.dataFormat === 4 && candidate.dataFormat === 5;
+const forwardDataMigration = (previous, candidate) => [4,5].includes(previous?.dataFormat) && [5,6].includes(candidate.dataFormat) && previous.dataFormat < candidate.dataFormat;
+const sessionFormat = release => release?.sessionFormat ?? 2;
+const forwardMigration = (previous, candidate) => !!previous && (forwardDataMigration(previous, candidate) || sessionFormat(previous) < sessionFormat(candidate));
 export const maintenancePipe = root => `${control.pipeName(root)}-maintenance`;
 
 async function optionalJson(file) {
@@ -71,8 +73,9 @@ export async function activateRelease(requestedRoot, candidate, { lifecycle = co
   return exclusive(root, async () => {
     if (await optionalJson(transitionFile(root))) throw new Error('release_recovery_required');
     const previous = await optionalJson(path.join(root, 'installation.json'));
-    if (previous && previous.dataFormat !== candidate.dataFormat && !forwardMigration(previous, candidate)) {
-      throw new Error('incompatible_data_format: only the verified 4 to 5 migration is supported');
+    if (previous && sessionFormat(previous) > sessionFormat(candidate)) throw new Error('incompatible_session_format');
+    if (previous && previous.dataFormat !== candidate.dataFormat && !forwardDataMigration(previous, candidate)) {
+      throw new Error('incompatible_data_format: unsupported data-format transition');
     }
     await validateRelease(root, candidate);
     if (previous?.appSha256 === candidate.appSha256) return { status: 'unchanged', release: previous };

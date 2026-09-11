@@ -183,3 +183,17 @@ test('恢复时保留已执行结果的上下文，但不吞掉用户明确要�
   assert.equal(result.at(-1).reason.kind, 'tool-calls')
   assert.equal(server.responses.length, 0)
 })
+
+
+test('账号目录返回 Astra 时按原模型 ID 与思考深度发送，不替换为其他模型', async () => {
+  const server = new Server()
+  server.models = async () => [{model:'gpt-6-astra',displayName:'GPT-6 Astra',inputModalities:['text','image'],
+    defaultReasoningEffort:'medium',supportedReasoningEfforts:[{reasoningEffort:'medium'}]}]
+  const adapter = new SafeCodexAdapter(server)
+  assert.equal((await adapter.listModels())[0].id, 'gpt-6-astra')
+  assert.equal(String((await adapter.resolveModel('openai-codex','gpt-6-astra')).reasoning.efforts[0].id), 'medium')
+  await Array.fromAsync(adapter.stream({...base,model:'gpt-6-astra',reasoningEffort:'medium',messages:[user('Astra 路由验收')]}))
+  assert.equal(server.starts[0].model,'gpt-6-astra')
+  assert.equal(server.turns[0].input.model,'gpt-6-astra')
+  assert.equal(server.turns[0].input.effort,'medium')
+})

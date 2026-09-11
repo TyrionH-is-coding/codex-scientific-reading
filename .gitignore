@@ -1,6 +1,7 @@
 node_modules/
 inputs/*
 !inputs/scientific-reading.tgz
+!inputs/A-PACKAGE-AUDIT.json
 .local/
 outputs/
 *.log

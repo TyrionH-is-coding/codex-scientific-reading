@@ -5,17 +5,17 @@ import { SafeCodexAdapter } from './adapter.mjs'
 export { SafeCodexAdapter } from './adapter.mjs'
 
 export const name = 'scientific-reading-codex'
-export const inject = ['llm']
+export const inject = ['llm', 'attachments']
 
-export function createOAuthRuntime(config) {
+export function createOAuthRuntime(config, attachments) {
   const server = new AppServer(config)
-  const adapter = new SafeCodexAdapter(server)
+  const adapter = new SafeCodexAdapter(server, attachments)
   const control = new OAuthControl(server, { onAccountChange: () => adapter.invalidate() })
   return { server, adapter, control, start: () => server.start(), stop: () => control.close() }
 }
 
 export function apply(ctx, config) {
-  const runtime = createOAuthRuntime(config)
+  const runtime = createOAuthRuntime(config, ctx.attachments)
   ctx.llm.registerAdapter(['openai-codex'], runtime.adapter)
   ctx.effect(() => () => runtime.stop(), 'scientific-reading-codex.close')
   ctx.inject(['webServer'], webCtx => {
