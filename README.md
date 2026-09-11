@@ -72,6 +72,8 @@ DLC 是一个由 **Codex 统筹、DeepSeek Harness（DSH）承载**的文献工�
 
 **导入论文 → 获取正文 → 双语精读 → 记录与回顾 → 下次接着读。**
 
+当前源码补齐了 [OA 未取得后的高校权限询问与正文获取流程](skills/deep-literature-for-codex/references/download.md)：选择与下载回执跟随原任务保存，认证由本人完成，文件校验后续接。旧 rc.6 安装包尚不包含此流程；真实高校/出版商的可用性仍需按账号与文章验证。
+
 ### 看看生成的阅读页
 
 下面是此前用《[Attention Is All You Need](https://arxiv.org/abs/1706.03762)》实际生成的 HTML Reader：按章节导航，查看中文译文与英文原文，在正文中阅读图表。
