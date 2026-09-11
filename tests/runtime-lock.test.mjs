@@ -12,6 +12,12 @@ test('宿主依赖固定同一版本，Windows 原生进程库不重复加载', 
   assert.ok(!plugin.link);
   const archive=await fs.readFile(new URL('../inputs/scientific-reading.tgz',import.meta.url));
   assert.equal(plugin.integrity,'sha512-'+createHash('sha512').update(archive).digest('base64'));
+  assert.equal(pins.plugin.sha256,createHash('sha256').update(archive).digest('hex'));
+  const auditBytes=await fs.readFile(new URL('../inputs/A-PACKAGE-AUDIT.json',import.meta.url));
+  assert.equal(pins.plugin.packageAuditSha256,createHash('sha256').update(auditBytes).digest('hex'));
+  const audit=JSON.parse(auditBytes);
+  assert.equal(audit.passed,true);
+  assert.equal(audit.sha256,pins.plugin.sha256);
   const dsh=Object.entries(lock.packages).filter(([name])=>/node_modules\/@deepseek-ai\/dsh[^/]*$/.test(name));
   assert.ok(dsh.length>0);
   for(const [name,pkg] of dsh) assert.equal(pkg.version,pins.dsh,name);

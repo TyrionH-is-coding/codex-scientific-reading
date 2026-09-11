@@ -17,13 +17,12 @@
   "plugin": {
     "name": "@dsh-external/dsh-scientific-reading",
     "version": "0.2.0-rc.2",
-    "sha256": "b876ab55c83b42033331cfd95e75abbe7cbf640d2073cd2f46ae0388a7c13150",
-    "source": "v0.2 工作树快照：真实模型目录、四套预设主题、原生右侧栏；DSH 0.1.5-rc.1；未发布",
-    "sourceCommit": null,
+    "sha256": "09b5ec32aa96e88fb6d86b600eb3e23e8620cafe998a72ba44f2d1480f2fcb49",
+    "source": "v0.2 候选版：由已提交的 DSH 插件源码构建，随仓库固定分发",
+    "sourceCommit": "8f6292fa962fbb2719d10a221f74ff2927627900",
     "url": null,
-    "sourceBaseCommit": "bd35fab9cc684e4f56330457a6430aeadb4e0331",
-    "sourceState": "working-tree candidate snapshot",
-    "packageAuditSha256": "23fde6c2ad65d8de0c616a6a2ffc484886e25ef4fabf88a12ccff78c03077197",
+    "sourceState": "committed",
+    "packageAuditSha256": "5b5c17b9ef18faded570fe6b006a92ab3b9f8fa03b35393bb1679d4a99d347b0",
     "published": false
   },
   "platforms": {
