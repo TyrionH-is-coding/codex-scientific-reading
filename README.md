@@ -11,13 +11,14 @@
   <a href="docs/platforms.md#windows"><img src="https://img.shields.io/badge/Windows-x64-0078D4?style=flat-square" alt="Windows x64"></a>
   <a href="docs/platforms.md#macos--linux"><img src="https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-555555?style=flat-square" alt="macOS Apple Silicon / Intel"></a>
   <a href="docs/platforms.md#macos--linux"><img src="https://img.shields.io/badge/Linux-x64%20%7C%20ARM64-555555?style=flat-square" alt="Linux x64 / ARM64"></a>
-  <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6"><img src="https://img.shields.io/badge/Release-v0.1.0--rc.6-176b63?style=flat-square" alt="Release v0.1.0-rc.6"></a>
+  <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.2.0-rc.2"><img src="https://img.shields.io/badge/Release-v0.2.0--rc.2-176b63?style=flat-square" alt="Release v0.2.0-rc.2"></a>
 </p>
 
 <p align="center">
   <a href="#近期更新">近期更新</a> ·
   <a href="#项目简介">项目简介</a> ·
   <a href="#快速开始">快速开始</a> ·
+  <a href="docs/upgrading.md">更新已有安装</a> ·
   <a href="docs/getting-started.md">使用指南</a> ·
   <a href="#加入交流群">加入交流群</a> ·
   <a href="https://github.com/TyrionH-is-coding/deep-literature-for-codex/issues">反馈问题</a>
@@ -39,7 +40,7 @@
 | **按课题整理和发现文献** | 自定义 Excel 列、研究字段与阅读模板；文献雷达按研究方向发现候选论文，由你决定是否入库。 |
 | **缺少全文时继续获取** | OA 未取得后，Codex 询问机构访问权限，协助在本人授权的浏览器中获取 PDF，再接回原任务。[正文获取流程](skills/deep-literature-for-codex/references/download.md) |
 
-以上为 `main` 的 v0.2 候选功能，尚未发布 v0.2 安装包；当前公开包仍为 [v0.1.0-rc.6](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.1.0-rc.6)。尝试候选版请按[源码测试步骤](docs/platforms.md#从-main-源码测试)操作，升级前备份完整文献库。
+下载 [v0.2.0-rc.2 预发布版](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.2.0-rc.2)，按系统选择安装包。**已经安装过的用户请按[升级指南](docs/upgrading.md)更新原目录，保留文献、笔记与配置。**
 
 <details>
 <summary><strong>已验证到哪里？</strong></summary>
@@ -81,6 +82,8 @@ DLC 是一个由 **Codex 统筹、DeepSeek Harness（DSH）承载**的文献工�
 截图来自既有阅读成果；[配图来源](docs/media/README.md)记录对应文件与截图方式。
 
 ## 快速开始
+
+**已经安装过？** 对 Codex 说“把已有 DLC 更新到 v0.2.0-rc.2，保留原文献库和配置”，按[升级指南](docs/upgrading.md)更新原目录与 Skill。
 
 ### 1. 让 Codex 帮你安装
 
@@ -128,7 +131,7 @@ sh ./install.sh --plugin-archive ./inputs/scientific-reading.tgz --install-skill
 
 ### 2. 配置模型与解析服务
 
-v0.2 从工作台右上角打开 **“文献设置”**，连接 Codex 订阅并保存 MinerU Key；公开 v0.1 安装包的入口为“设置与状态”。
+从工作台右上角打开 **“文献设置”**，连接 Codex 订阅并保存 MinerU Key。
 
 | 配置 | 用途 | 如何开始 |
 | --- | --- | --- |

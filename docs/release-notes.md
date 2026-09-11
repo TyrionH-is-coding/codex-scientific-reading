@@ -7,7 +7,7 @@
 - 支持离线 HTML 分享、Excel 列与研究字段、阅读模板和文献雷达；OA 未取得后可按本人授权继续机构全文获取。
 - 固定适配 DSH 0.1.5-rc.1；源码内置引擎关联明确的来源提交、包审计与依赖锁。
 
-本次更新已进入 `main`，尚未发布 v0.2 Release。真实账号的 Astra 调用与识图效果、机构访问、旧库升级和各平台实机验收仍需继续验证。[使用与迁移指南](v0.2-guide.md) · [验收记录](v0.2-acceptance.md)
+安装包和对应验收结果见 [v0.2.0-rc.2 Release](https://github.com/TyrionH-is-coding/deep-literature-for-codex/releases/tag/v0.2.0-rc.2)。已有用户按[升级指南](upgrading.md)更新原目录与 Skill；安装器在切换前备份文献库，迁移后不能直接回退 v0.1。真实账号的 Astra 调用与识图效果、机构访问和各平台桌面软件兼容性仍需继续验证。[使用指南](v0.2-guide.md) · [开发阶段验收记录](v0.2-acceptance.md)
 
 # rc.8 本地候选：设置页、模型恢复与翻译续接
 

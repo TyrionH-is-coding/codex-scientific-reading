@@ -18,12 +18,12 @@
     "name": "@dsh-external/dsh-scientific-reading",
     "version": "0.2.0-rc.2",
     "sha256": "09b5ec32aa96e88fb6d86b600eb3e23e8620cafe998a72ba44f2d1480f2fcb49",
-    "source": "v0.2 候选版：由已提交的 DSH 插件源码构建，随仓库固定分发",
+    "source": "Deep Literature for DSH v0.2.0-rc.2 公开预发布包",
     "sourceCommit": "8f6292fa962fbb2719d10a221f74ff2927627900",
-    "url": null,
+    "url": "https://github.com/TyrionH-is-coding/deep-literature-for-dsh/releases/download/v0.2.0-rc.2/dsh-external-dsh-scientific-reading-0.2.0-rc.2.tgz",
     "sourceState": "committed",
     "packageAuditSha256": "dde777fe64a4fcd148c04bb065b3ef88b4472066675aa3f7cb4f8b66e2366ab8",
-    "published": false
+    "published": true
   },
   "platforms": {
     "darwin-arm64": {

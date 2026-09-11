@@ -22,7 +22,7 @@ export function apply(ctx) {
         <h2>连接模型</h2>
         <p>此工作台需单独连接模型。已配置可直接进入。</p>
         <p><a href="/api/codex-oauth/ui">连接 Codex 订阅</a>　<a href="/">配置模型 API</a></p>
-        <h2>解析 PDF</h2><p>需要解析 PDF 时，在“设置与状态”填写 MinerU API Key。</p>
+        <h2>解析 PDF</h2><p>需要解析 PDF 时，在右上角“文献设置”填写 MinerU API Key。</p>
         <p>编辑 Excel 后，保存并关闭，再对 Codex 说“同步文献表”。</p>
         <p><a href="/">进入文献库</a></p></html>`);
     },

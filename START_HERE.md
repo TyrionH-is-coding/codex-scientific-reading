@@ -1,5 +1,7 @@
 # 开始使用 DLC · Deep Literature for Codex
 
+**已有工作台？** 按[升级指南](docs/upgrading.md)更新原安装目录与 Skill，保留已有文献和配置。
+
 先从 [README 项目首页](README.md)了解 DLC；首次使用按[完整使用指南](docs/getting-started.md)依次完成：
 
 1. 按 [平台指南](docs/platforms.md) 下载对应安装包，运行 Windows 或 macOS/Linux 安装器。

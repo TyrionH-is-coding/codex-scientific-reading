@@ -71,13 +71,25 @@ try {
   check('installed launcher starts a real host', started.json.ok && started.json.status === 'running');
   const identity = await fetch(started.json.url + '/__workbench/identity').then(r => r.json());
   check('HTTP identity matches the installed instance', identity.instanceId === started.json.instanceId);
-  const entry = await fetch(started.json.entryUrl).then(r => r.text());
-  check('entry page explains isolated model setup before browsing', entry.includes('外层 Codex') && entry.includes('MinerU') && entry.includes('/api/codex-oauth/ui'));
-  const page = await fetch(started.json.url).then(r => ({ ok: r.ok, contentType: r.headers.get('content-type') }));
+  const entryUrl = new URL(started.json.entryUrl);
+  check('browser entry authenticates the same local instance', entryUrl.origin === started.json.url
+    && Boolean(entryUrl.searchParams.get('token')));
+  const authentication = await fetch(entryUrl, { redirect: 'manual' });
+  const redirect = new URL(authentication.headers.get('location') || '/', started.json.url);
+  const cookies = authentication.headers.getSetCookie().map(value => value.split(';')[0]);
+  check('browser authentication sets a cookie and redirects within the instance', authentication.status === 303
+    && redirect.origin === started.json.url && cookies.length > 0);
+  const browserHeaders = { cookie: cookies.join('; ') };
+  const entry = await fetch(redirect, { headers: browserHeaders });
+  check('authenticated browser entry serves the web UI', entry.ok && entry.headers.get('content-type')?.includes('text/html'));
+  const setup = await fetch(started.json.url + '/__workbench', { headers: browserHeaders }).then(r => r.text());
+  check('setup page provides the model connection and PDF parsing entry points', setup.includes('href="/api/codex-oauth/ui"')
+    && setup.includes('href="/"') && setup.includes('MinerU'));
+  const page = await fetch(started.json.url, { headers: browserHeaders }).then(r => ({ ok: r.ok, contentType: r.headers.get('content-type') }));
   check('workbench serves its web UI', page.ok && page.contentType.includes('text/html'));
-  const oauth = await fetch(started.json.url + '/api/codex-oauth').then(r => r.json());
+  const oauth = await fetch(started.json.url + '/api/codex-oauth', { headers: browserHeaders }).then(r => r.json());
   check('installed native OAuth starts with an isolated unauthenticated account', oauth.status === 'unauthenticated' && oauth.authenticated === false);
-  const loginPage = await fetch(started.json.url + '/api/codex-oauth/ui').then(r => r.text());
+  const loginPage = await fetch(started.json.url + '/api/codex-oauth/ui', { headers: browserHeaders }).then(r => r.text());
   check('OAuth page provides the explicit authorization link', loginPage.includes('打开 OpenAI 授权页'));
   const skillArgs = process.platform === 'win32'
     ? ['-NoProfile', '-File', path.join(skillRoot, 'scripts', 'workbench.ps1'), 'status']
@@ -93,7 +105,7 @@ try {
   check('installed wheel passes MinerU empty visual regression with provenance and integrity guards', true);
   const api = async (action, payload = {}) => {
     const response = await fetch(started.json.url + '/__workbench/api', { method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, payload, instanceId: started.json.instanceId }) });
+      headers: { ...browserHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ action, payload, instanceId: started.json.instanceId }) });
     const reply = await response.json();
     assert.equal(reply.ok, true, JSON.stringify(reply));
     return reply.value;
