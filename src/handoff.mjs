@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { readJson, writeJson } from './core.mjs';
 import { ensureInstanceWorkspace, ensureLiteratureDefault } from './workspace.mjs';
+import { acquire, acquireDownload, refreshAcquisition, attachedAcquisition } from './acquisition.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -37,6 +38,8 @@ export class Handoff {
     return result;
   }
   save() { return writeJson(this.file, this.data); }
+  acquire(request) { return this.serial(() => acquire(this, request)); }
+  acquireDownload(request) { return this.serial(() => acquireDownload(this, request)); }
   scopeFor(sessionId) {
     const seen = new Set();
     while (sessionId && !seen.has(sessionId)) {
@@ -137,6 +140,7 @@ export class Handoff {
       if (task.cancelRequested && !['completed', 'failed'].includes(task.status)) task.status = 'cancel_requested';
     } catch (error) { task.status = 'failed'; task.error = error.message; }
     task.checkedAt = new Date().toISOString();
+    refreshAcquisition(task);
     await this.save();
     return task;
   }
@@ -200,6 +204,7 @@ export class Handoff {
               await this.engine(['full-read-pipeline-resume', '--job-id', task.jobId, '--input', '-'], { pdf_attached: true }, scope);
             }
             previous.status = 'completed';
+            attachedAcquisition(task, previous.sha256, previous.sourceType);
             await this.save();
             return structuredClone(await this._refresh(task));
           }
@@ -219,6 +224,7 @@ export class Handoff {
         const bytes = await fs.readFile(pdf);
         if (!bytes.subarray(0, 5).equals(Buffer.from('%PDF-'))) throw new Error('invalid_pdf');
         sha256 = createHash('sha256').update(bytes).digest('hex');
+        if (task.acquisition?.pdf === pdf && task.acquisition.sha256 !== sha256) throw new Error('downloaded_pdf_changed');
       } else if (kind !== 'resume' || !payload.input || typeof payload.input !== 'object' || Array.isArray(payload.input)) throw new Error('invalid_operation');
       const operation = task.operations[key] = { fingerprint, kind, status: 'prepared', gateDigest: gateDigest(task.job),
         ...(kind === 'attach' ? { sha256, sourceType: payload.sourceType } : {}) };
@@ -226,6 +232,7 @@ export class Handoff {
       if (kind === 'resume') await this.engine(['full-read-pipeline-resume', '--job-id', task.jobId, '--input', '-'], payload.input, scope);
       else await this.engine(['full-read-pdf-attach-resume', '--paper-id', task.paperId, '--job-id', task.jobId, '--pdf', pdf], undefined, scope);
       operation.status = 'completed';
+      if (kind === 'attach') attachedAcquisition(task, sha256, payload.sourceType);
       task.cancelRequested = false;
       await this.save();
       return structuredClone(await this._refresh(task));

@@ -53,7 +53,7 @@ macOS/Linux 的同等调用为 `sh "<Skill目录>/scripts/workbench.sh" call "<�
 2. 按用户方向创建/选择分类。`bind` 建立稳定 folderId → sessionId；重命名后仍用原 ID。只通过此入口创建分类管理员。
 3. 给定 DOI/链接/题名，核对题录，`ingest` 后使用返回的 paper_id。元数据不足时保留已知字段，不编造摘要。`move` 把论文归入目标分类；论文跨分类移动由总管处理。
 4. `submit` 带稳定 idempotencyKey、folderId、paperId。保留 taskId/jobId；重试使用同一键。`waiting_agent` 时 `dispatch` 投递原任务；`dispatched` 时隔一段时间读 `task`，不连续高频查询。
-5. `waiting_user` 准确报告所需 PDF、MinerU Key 或阅读确认。不要替用户完成阅读确认或条款接受。补齐后 `attach`/`resume`，随后读状态；等待翻译/复核时再 `dispatch`。不把模型回复当成正式资产。
+5. `waiting_user` 先看 `job.detail.reason_code`。`pdf_required` 时按 `task.acquisition.nextAction` 和 [正文获取流程](references/download.md) 继续：OA 未取得后主动询问高校/机构访问权限，记录用户选择，再引导授权浏览器获取；不要直接结束为“请手动补 PDF”。MinerU Key、阅读确认等其他 gate 按各自要求处理。不要替用户完成阅读确认或条款接受。补齐后 `attach`/`resume`，随后读状态；等待翻译/复核时再 `dispatch`。不把模型回复当成正式资产。
 6. 完成须来自 `task.status=completed` 且包含经清单与 HTTP SHA 校验的 Reader；打开它供用户阅读。数据变化或状态失败时说明具体 error。取消会撤回本任务排队消息，只在能确认当前 turn 属于本任务时中断；A 已启动的解析可能仍在结束，以实际任务状态为准。
 
 DSH 的分类工具有宿主和 Python 范围校验；其子会话继承分类。未绑定/归档的会话无法调用工具。不要绕过限制给分类会话 shell、文件编辑、全局库设置或通用浏览器/HTTP 工具。原任务 gate 材料由 `csr_read_job_input` 分页读取。
@@ -68,7 +68,7 @@ DSH 的分类工具有宿主和 Python 范围校验；其子会话继承分类�
 
 ## PDF 与模型
 
-A 自动获取仅限 OA。非 OA 时使用当前可用的合法全文获取能力，优先用户常用 Chrome 的本人授权会话；没有浏览器能力或目标被网络/验证阻断时保留待补 PDF，不能保证机构访问必成功。不读取、导出、复制密码、Cookie、验证码、浏览器 Profile、登录文件。登录、验证、条款交给用户。合理尝试出版社和用户的机构入口后停止循环，转手动正文 PDF。
+A 自动获取仅限 OA。未取得 OA PDF 后，B 的 Codex 总管理员执行 [正文获取流程](references/download.md)：询问是否有高校/机构权限且愿意使用，保存该任务的回答与公开图书馆入口，沿本人授权的当前浏览器会话寻找全文。用户在本次任务或明确覆盖的同批任务中已经回答时复用回答，不重复询问；不能从有账号或已登录自行推断授权范围。没有权限、暂不使用、浏览器不可用或有限尝试仍失败时保留待补 PDF。认证成功不等于论文有权限或 PDF 已下载。不读取、导出、复制密码、Cookie、验证码、浏览器 Profile、登录文件。登录、验证、条款交给用户。
 
 已取得文件使用 `attach`，sourceType 为 `manual` 或 `codex_authorized`；必须传真实本地 PDF 路径，让 A 校验文件、论文/任务和 SHA，不能直接写 SQLite 或把 HTML 当 PDF。
 

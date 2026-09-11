@@ -23,6 +23,8 @@
 | dispatch | `{taskId,retryKey?}` | 将 waiting_agent 原任务投递到主管；同 gate 不重复投递。模型失败/取消后明确重试可使用新稳定 retryKey，同一重试不换键 |
 | resume | `{taskId,idempotencyKey,input:{...}}` | 遵守 A 当前 required_input 的明确续接 |
 | attach | `{taskId,idempotencyKey,pdf,sourceType}` | 真实绝对文件路径；来源 manual/codex_authorized；续接同篇同任务 |
+| acquisition | `{taskId,idempotencyKey,expectedRevision,event,hasAccess?,libraryUrl?}` | PDF 缺失后的高校权限选择、公开资源入口和浏览器交接；事件与状态见 [正文获取流程](download.md) |
+| acquisition_download | `{taskId,idempotencyKey,expectedRevision,proxy,target,url}` | 用户已选择机构访问并进入 browsing 后，从核对过的同源标签页传输正文 PDF；返回本地路径/SHA，再调用 attach |
 | cancel | `{taskId}` | 只移除本任务排队提示，确认当前 turn 属于本任务才取消；不声称 A detached worker 已停止 |
 | reader | `{paperId}` | 验证 Reader 清单及 HTTP SHA 后返回链接 |
 
@@ -37,6 +39,8 @@
 `translation_retry_limit` 必须由用户明确要求继续后使用 `resume`，输入仅为 `{"retry_translation":true}`。随后读回任务再 `dispatch`；分类 agent 不能自行清除这个暂停。`accepted_blocks` 是已校验并保存的条数，`remaining_block_ids` 是下一次补译范围。`full-translation-v4` 只回传各块的 `block_id`、`translation_zh`，并带当前 gate 的批次、来源和完整源批次文件 SHA；英文和初步高亮由引擎绑定。旧任务的 v3 合同继续有效。
 
 `dispatched` 表示任务在进行，不代表 PDF/Reader 已存在。`waiting_user` 看 `job.detail.reason_code/required_input`；`waiting_agent` 调用 dispatch。`failed` 看 `error` 或 A job detail。
+
+`pdf_required` 时任务带 `acquisition`，应按其 `nextAction` 先询问高校权限，再引导机构访问；用户回答和回执持久保存。同一回复/下载请求重试不换键；`expectedRevision` 必须来自当前状态。接口不会自行确认用户已登录，不接受 Cookie/密码，也不会因认证成功而把论文标为已下载。
 
 已有投递回执再次调用 `dispatch` 时会恢复同一原生会话，按 rpcId 核对真实 inbox、`user/message` 和取消事件。`dispatch.evidence` 为 pending/delivered 时 status 保持 accepted；正常关闭 DSH 撤销的排队消息返回 canceled；证据不足返回 uncertain。相同 gate 不重发；已授权继续的明确撤销可使用新稳定 retryKey。领取消息但尚未组装成 user/message 的短暂窗口属于 uncertain，不能推断为取消。
 

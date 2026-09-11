@@ -86,6 +86,8 @@ export async function apply(ctx, config) {
       case 'dispatch': return service.dispatch(p.taskId, p.retryKey);
       case 'resume': return service.operate(p.taskId, p.idempotencyKey, 'resume', p);
       case 'attach': return service.operate(p.taskId, p.idempotencyKey, 'attach', p);
+      case 'acquisition': return service.acquire(p);
+      case 'acquisition_download': return service.acquireDownload(p);
       case 'cancel': return service.cancel(p.taskId);
       case 'folder_archive':
         if (typeof p.archived !== 'boolean') throw new Error('archived_boolean_required');
